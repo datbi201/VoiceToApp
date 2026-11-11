@@ -1,0 +1,10 @@
+# Local user config & coordinates
+VoiceToApp.ini
+*.log
+*.tmp
+*.ps1
+
+# Windows
+Thumbs.db
+Desktop.ini
+.DS_Store
