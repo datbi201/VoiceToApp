@@ -1,7 +1,7 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 ; ============================================================
-; VoiceToApp - Agy - Rev5.2
+; VoiceToApp - Agy - Rev5.3
 ; Ban o cua so A. F8 bat/tat mic cua Agy, chu duoc dan ve A.
 ; Chi dung toa do (khong nhan dien hinh anh) de chay nhanh.
 ;
@@ -64,13 +64,13 @@ Tip(text, ms := 2500) {
     SetTimer(() => ToolTip(), -ms)
 }
 
-Beep(freq, dur := 70) {
+PlayBeep(freq, dur := 70) {
     if BEEP {
         try SoundBeep(freq, dur)
     }
 }
 
-Log(msg) {
+WriteLog(msg) {
     try FileAppend(FormatTime(, "HH:mm:ss") "  " msg "`n", logFile, "UTF-8")
 }
 
@@ -137,9 +137,9 @@ Calib(name) {
     IniWrite(ww, ini, "B", "WinW")
     IniWrite(wh, ini, "B", "WinH")
     IniWrite(st, ini, "B", "WinState")
-    Beep(1000, 60)
+    PlayBeep(1000, 60)
     Tip("Da luu " name ": " (mx - wx) "," (my - wy) " | cua so " ww "x" wh " tai " wx "," wy note, 4500)
-    Log("Calib " name " | chuot " mx "," my " | cua so " wx "," wy " " ww "x" wh " state=" st)
+    WriteLog("Calib " name " | chuot " mx "," my " | cua so " wx "," wy " " ww "x" wh " state=" st)
 }
 
 RectMatch(hwnd, sx, sy, sw, sh, checkPos := true) {
@@ -177,7 +177,7 @@ EnsureLayout(hwnd) {
         if RectMatch(hwnd, 0, 0, sw, sh, false)
             return true
         Tip("Kich thuoc cua so " APP_NAME " da doi. Hay bam lai F9, F10, F11.", 5000)
-        Log("Ini cu: kich thuoc khong khop " sw "x" sh)
+        WriteLog("Ini cu: kich thuoc khong khop " sw "x" sh)
         return false
     }
     sx := Integer(sx)
@@ -197,11 +197,11 @@ EnsureLayout(hwnd) {
 
     if !OnScreen(sx, sy, sw, sh) {
         Tip("Vi tri da luu cua " APP_NAME " nam ngoai man hinh (da doi cach bo tri man hinh?). Hay bam lai F9, F10, F11.", 6000)
-        Log("Ngoai man hinh: " sx "," sy " " sw "x" sh)
+        WriteLog("Ngoai man hinh: " sx "," sy " " sw "x" sh)
         return false
     }
 
-    Log("Dua cua so ve " sx "," sy " " sw "x" sh " (max=" wantMax ")")
+    WriteLog("Dua cua so ve " sx "," sy " " sw "x" sh " (max=" wantMax ")")
     Loop 2 {
         if (WinGetMinMax(hwnd) = 0)
             break
@@ -221,7 +221,7 @@ EnsureLayout(hwnd) {
         return true
     WinGetPos(, , &w, &h, hwnd)
     Tip("Khong dua duoc " APP_NAME " ve dung kich thuoc (" w "x" h " thay vi " sw "x" sh "). Hay bam lai F9, F10, F11.", 6000)
-    Log("Khong khop sau WinMove: " w "x" h " thay vi " sw "x" sh)
+    WriteLog("Khong khop sau WinMove: " w "x" h " thay vi " sw "x" sh)
     return false
 }
 
@@ -273,7 +273,7 @@ ClickAt(x, y) {
     pn := ""
     try pn := WinGetProcessName(under)
     if (pn != bProc) {
-        Log("ClickAt " x "," y " BI CHE boi: " pn " (can: " bProc ")")
+        WriteLog("ClickAt " x "," y " BI CHE boi: " pn " (can: " bProc ")")
         return false
     }
     Click()
@@ -326,14 +326,14 @@ ToggleVoice() {
             return
         }
         recording := true
-        Beep(900)
+        PlayBeep(900)
         ToolTip("Dang ghi am... bam F8 de dung", 20, 20)
         if RETURN_TO_A {
             Sleep BACK_DELAY
             BackToA()
         }
         SetPos(ox, oy)
-        Log("BAT xong sau " (A_TickCount - t0) " ms")
+        WriteLog("BAT xong sau " (A_TickCount - t0) " ms")
         return
     }
 
@@ -408,6 +408,6 @@ ToggleVoice() {
     Sleep 80
     Send "^v"
     SetPos(ox, oy)
-    Beep(700)
-    Log("DUNG xong sau " (A_TickCount - t0) " ms (cho+copy " (t2 - t1) " ms, " StrLen(text) " ky tu)")
+    PlayBeep(700)
+    WriteLog("DUNG xong sau " (A_TickCount - t0) " ms (cho+copy " (t2 - t1) " ms, " StrLen(text) " ky tu)")
 }

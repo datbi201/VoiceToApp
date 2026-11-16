@@ -20,10 +20,10 @@ Chỉ chạy một bản mỗi lúc, vì các bản dùng chung phím tắt.
 
 ## Các file
 ```
-├── VoiceToApp_Claude_Rev5.2.ahk   # Claude Desktop
-├── VoiceToApp_Agy_Rev5.2.ahk      # Antigravity
-├── VoiceToApp_Gemini_Rev5.2.ahk   # Gemini (trong trình duyệt)
-├── VoiceToApp_GPT_Rev5.2.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
+├── VoiceToApp_Claude_Rev5.3.ahk   # Claude Desktop
+├── VoiceToApp_Agy_Rev5.3.ahk      # Antigravity
+├── VoiceToApp_Gemini_Rev5.3.ahk   # Gemini (trong trình duyệt)
+├── VoiceToApp_GPT_Rev5.3.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
 ├── template/                      # Mẫu chung và script sinh 4 bản
 ├── CLAUDE.md                      # Quy tắc dự án (cho Claude Code)
 ├── BAN-GIAO.md                    # Trạng thái và việc đang chờ

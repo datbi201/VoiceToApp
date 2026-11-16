@@ -1,15 +1,15 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 ; ============================================================
-; VoiceToApp - GPT - Rev5.2
-; Ban o cua so A. F8 bat/tat mic cua GPT, chu duoc dan ve A.
+; VoiceToApp - Gemini - Rev5.3
+; Ban o cua so A. F8 bat/tat mic cua Gemini, chu duoc dan ve A.
 ; Chi dung toa do (khong nhan dien hinh anh) de chay nhanh.
 ;
 ; CAI DAT MOT LAN: F9 (nut Mic), F10 (o nhap chu), F11 (nut Dung).
 ; Toa do + vi tri + kich thuoc cua so duoc luu vao
-;   %LOCALAPPDATA%\VoiceToApp\GPT.ini
+;   %LOCALAPPDATA%\VoiceToApp\Gemini.ini
 ; nen khong mat khi tat may. Moi lan bam F8 (hoac F12), script tu dua
-; cua so GPT ve dung vi tri/kich thuoc da luu.
+; cua so Gemini ve dung vi tri/kich thuoc da luu.
 ; Chi can cai lai khi ban chu dong doi vi tri/kich thuoc cua so.
 ; ============================================================
 CoordMode "Mouse", "Screen"
@@ -20,9 +20,9 @@ SetMouseDelay 0
 SetKeyDelay 0
 
 ; ===== CAU HINH =====
-APP_NAME := "GPT"
+APP_NAME := "Gemini"
 ; Cac mau cua so can tim, thu lan luot. Xem ten tien trinh/tieu de that bang Ctrl+Shift+F12.
-B_CANDIDATES := ["ahk_exe ChatGPT.exe", "ChatGPT ahk_exe chrome.exe", "ChatGPT ahk_exe msedge.exe", "ChatGPT ahk_exe firefox.exe"]
+B_CANDIDATES := ["Gemini ahk_exe chrome.exe", "Gemini ahk_exe msedge.exe", "Gemini ahk_exe firefox.exe"]
 RETURN_TO_A := true            ; true: bat mic xong quay ve A ngay
 BEEP := false                  ; true: phat tieng bip (cao = bat dau ghi, thap = da dan xong)
 AUTO_LAYOUT := true            ; true: tu dua cua so ve vi tri/kich thuoc da luu
@@ -47,10 +47,10 @@ bProc := ""
 
 ; --- PHIM TAT ---
 ; F8 : bat dau noi / dung va chuyen chu sang A
-; F9 : (cai dat) re chuot len nut MIC cua GPT, bam F9
-; F10: (cai dat) re chuot len O NHAP CHU cua GPT, bam F10
+; F9 : (cai dat) re chuot len nut MIC cua Gemini, bam F9
+; F10: (cai dat) re chuot len O NHAP CHU cua Gemini, bam F10
 ; F11: (cai dat, neu co) dang ghi am, re chuot len nut DUNG/XAC NHAN, bam F11
-; F12: dua cua so GPT ve dung vi tri/kich thuoc da luu (khong can bat mic)
+; F12: dua cua so Gemini ve dung vi tri/kich thuoc da luu (khong can bat mic)
 ; Ctrl+Shift+F12: xem ten tien trinh va tieu de cua cua so duoi con tro chuot
 F8:: ToggleVoice()
 F9:: Calib("Mic")
@@ -64,13 +64,13 @@ Tip(text, ms := 2500) {
     SetTimer(() => ToolTip(), -ms)
 }
 
-Beep(freq, dur := 70) {
+PlayBeep(freq, dur := 70) {
     if BEEP {
         try SoundBeep(freq, dur)
     }
 }
 
-Log(msg) {
+WriteLog(msg) {
     try FileAppend(FormatTime(, "HH:mm:ss") "  " msg "`n", logFile, "UTF-8")
 }
 
@@ -137,9 +137,9 @@ Calib(name) {
     IniWrite(ww, ini, "B", "WinW")
     IniWrite(wh, ini, "B", "WinH")
     IniWrite(st, ini, "B", "WinState")
-    Beep(1000, 60)
+    PlayBeep(1000, 60)
     Tip("Da luu " name ": " (mx - wx) "," (my - wy) " | cua so " ww "x" wh " tai " wx "," wy note, 4500)
-    Log("Calib " name " | chuot " mx "," my " | cua so " wx "," wy " " ww "x" wh " state=" st)
+    WriteLog("Calib " name " | chuot " mx "," my " | cua so " wx "," wy " " ww "x" wh " state=" st)
 }
 
 RectMatch(hwnd, sx, sy, sw, sh, checkPos := true) {
@@ -177,7 +177,7 @@ EnsureLayout(hwnd) {
         if RectMatch(hwnd, 0, 0, sw, sh, false)
             return true
         Tip("Kich thuoc cua so " APP_NAME " da doi. Hay bam lai F9, F10, F11.", 5000)
-        Log("Ini cu: kich thuoc khong khop " sw "x" sh)
+        WriteLog("Ini cu: kich thuoc khong khop " sw "x" sh)
         return false
     }
     sx := Integer(sx)
@@ -197,11 +197,11 @@ EnsureLayout(hwnd) {
 
     if !OnScreen(sx, sy, sw, sh) {
         Tip("Vi tri da luu cua " APP_NAME " nam ngoai man hinh (da doi cach bo tri man hinh?). Hay bam lai F9, F10, F11.", 6000)
-        Log("Ngoai man hinh: " sx "," sy " " sw "x" sh)
+        WriteLog("Ngoai man hinh: " sx "," sy " " sw "x" sh)
         return false
     }
 
-    Log("Dua cua so ve " sx "," sy " " sw "x" sh " (max=" wantMax ")")
+    WriteLog("Dua cua so ve " sx "," sy " " sw "x" sh " (max=" wantMax ")")
     Loop 2 {
         if (WinGetMinMax(hwnd) = 0)
             break
@@ -221,7 +221,7 @@ EnsureLayout(hwnd) {
         return true
     WinGetPos(, , &w, &h, hwnd)
     Tip("Khong dua duoc " APP_NAME " ve dung kich thuoc (" w "x" h " thay vi " sw "x" sh "). Hay bam lai F9, F10, F11.", 6000)
-    Log("Khong khop sau WinMove: " w "x" h " thay vi " sw "x" sh)
+    WriteLog("Khong khop sau WinMove: " w "x" h " thay vi " sw "x" sh)
     return false
 }
 
@@ -273,7 +273,7 @@ ClickAt(x, y) {
     pn := ""
     try pn := WinGetProcessName(under)
     if (pn != bProc) {
-        Log("ClickAt " x "," y " BI CHE boi: " pn " (can: " bProc ")")
+        WriteLog("ClickAt " x "," y " BI CHE boi: " pn " (can: " bProc ")")
         return false
     }
     Click()
@@ -326,14 +326,14 @@ ToggleVoice() {
             return
         }
         recording := true
-        Beep(900)
+        PlayBeep(900)
         ToolTip("Dang ghi am... bam F8 de dung", 20, 20)
         if RETURN_TO_A {
             Sleep BACK_DELAY
             BackToA()
         }
         SetPos(ox, oy)
-        Log("BAT xong sau " (A_TickCount - t0) " ms")
+        WriteLog("BAT xong sau " (A_TickCount - t0) " ms")
         return
     }
 
@@ -408,6 +408,6 @@ ToggleVoice() {
     Sleep 80
     Send "^v"
     SetPos(ox, oy)
-    Beep(700)
-    Log("DUNG xong sau " (A_TickCount - t0) " ms (cho+copy " (t2 - t1) " ms, " StrLen(text) " ky tu)")
+    PlayBeep(700)
+    WriteLog("DUNG xong sau " (A_TickCount - t0) " ms (cho+copy " (t2 - t1) " ms, " StrLen(text) " ky tu)")
 }
