@@ -3,6 +3,7 @@ VoiceToApp.ini
 *.log
 *.tmp
 *.ps1
+*.lnk
 
 # Windows
 Thumbs.db

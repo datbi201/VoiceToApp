@@ -1,42 +1,35 @@
 # VoiceToApp
-Voice-to-Text bridge automation script written in AutoHotkey v2.
 
-VoiceToApp allows you to dictate text using the built-in speech-to-text / voice recognition of an AI app (such as Google Antigravity or Claude Desktop) and automatically pastes the transcribed text into whatever target window you are working on (Word, Browser, VS Code, Chat, Terminal, etc.).
+Script AutoHotkey v2 cho Windows. Bạn nói bằng giọng nói ở ứng dụng AI (Claude, Antigravity, Gemini hoặc ChatGPT), script lấy chữ đã được chỉnh sửa rồi dán vào cửa sổ đang làm việc (Zalo, Telegram, Messenger, Word...).
 
-## 🚀 Key Features
-- **Global Hotkey `F8`**: 
-  - 1st press: Focuses speech app, clicks Mic, returns focus to your active window.
-  - 2nd press: Stops dictation, grabs transcription from speech app, clears the app input, and pastes text directly into your active window.
-- **Visual Image Search + Relative Coordinate Calibration**:
-  - Automatically identifies Mic / Stop buttons on screen using template images (`Mic.png`, `Stop.png`).
-  - Fallback to relative window coordinates calibrated via INI settings.
-- **Multi-app Support**:
-  - `VoiceToApp (agy)_v4.ahk`: Configured for **Google Antigravity**.
-  - `VoiceToApp (claude)_v4.ahk`: Configured for **Claude Desktop**.
-  - `VoiceToApp.ahk`: Master script (defaults to Antigravity, configurable).
+## Phím tắt
+- **F8**: lần 1 bật mic ở ứng dụng AI rồi quay về cửa sổ của bạn. Lần 2 dừng mic, lấy chữ, xoá ô nhập và dán vào cửa sổ của bạn.
+- **F9 / F10 / F11**: cài đặt vị trí nút Mic, ô nhập và nút Dừng (rê chuột lên đúng chỗ rồi bấm).
+- **F12**: đưa cửa sổ ứng dụng AI về đúng vị trí và kích thước đã cài.
+- **Ctrl+Shift+F12**: xem tên tiến trình và tiêu đề của cửa sổ dưới con trỏ.
 
-## 🛠 Prerequisites
-- Windows 10/11
-- [AutoHotkey v2.0+](https://www.autohotkey.com/) installed (`C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe`)
+## Cài đặt (làm một lần)
+1. Cài [AutoHotkey v2](https://www.autohotkey.com/).
+2. Mở ứng dụng AI, đặt cửa sổ ở vị trí và kích thước bạn muốn.
+3. Rê chuột lên nút Mic, bấm F9. Rê lên ô nhập, bấm F10. Khi đang ghi âm, rê lên nút Dừng, bấm F11 (nếu có).
+4. Chạy `run_voicetoapp_<tên>.bat` tương ứng.
 
-## 🎯 Quick Calibration (Run once for your monitor layout)
-1. Open the speech app (Antigravity or Claude).
-2. Hover mouse over the **Mic button** and press `F9`.
-3. Hover mouse over the **Input prompt area** and press `F10`.
-4. While dictating, hover mouse over the **Stop button** and press `F11`.
+Vị trí nút, vị trí và kích thước cửa sổ được lưu ở `%LOCALAPPDATA%\VoiceToApp\<App>.ini`, không mất khi tắt máy. Mỗi lần F8 hoặc F12, script tự đưa cửa sổ về đúng chỗ đã lưu. Chỉ cần cài lại khi bạn chủ động đổi vị trí hoặc kích thước cửa sổ.
 
-Coordinates and screenshot templates will be stored in `VoiceToApp.ini` and `.png` files.
+Chỉ chạy một bản mỗi lúc, vì các bản dùng chung phím tắt.
 
-## 📁 Repository Structure
+## Các file
 ```
-├── VoiceToApp.ahk               # Master AutoHotkey v2 script
-├── VoiceToApp (agy)_v4.ahk      # Dedicated script for Antigravity
-├── VoiceToApp (claude)_v4.ahk   # Dedicated script for Claude Desktop
-├── Mic.png                      # Calibration image template for Mic button
-├── Stop.png                     # Calibration image template for Stop button
-├── VoiceToApp.example.ini       # Template calibration configuration
-└── README.md                    # Project documentation
+├── VoiceToApp_Claude_Rev5.2.ahk   # Claude Desktop
+├── VoiceToApp_Agy_Rev5.2.ahk      # Antigravity
+├── VoiceToApp_Gemini_Rev5.2.ahk   # Gemini (trong trình duyệt)
+├── VoiceToApp_GPT_Rev5.2.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
+├── template/                      # Mẫu chung và script sinh 4 bản
+├── CLAUDE.md                      # Quy tắc dự án (cho Claude Code)
+├── BAN-GIAO.md                    # Trạng thái và việc đang chờ
+├── LICHSU-REV.md                  # Lịch sử các Rev
+└── README.md
 ```
 
-## ⚖️ License
+## Giấy phép
 MIT License.
