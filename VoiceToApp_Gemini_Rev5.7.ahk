@@ -1,7 +1,7 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 ; ============================================================
-; VoiceToApp - Gemini - Rev5.6
+; VoiceToApp - Gemini - Rev5.7
 ; Ban o cua so A. Bam vao o nhap chu thi hien nut mic nho; bam nut mic (hoac phim tat
 ; bat/tat ghi am, mac dinh F8) de bat/dung mic cua Gemini, chu duoc dan ve A.
 ; Chi dung toa do (khong nhan dien hinh anh) de chay nhanh.
@@ -29,7 +29,7 @@ RETURN_TO_A := true            ; true: bat mic xong quay ve A ngay
 BEEP := false                  ; true: phat tieng bip (cao = bat dau ghi, thap = da dan xong)
 AUTO_LAYOUT := true            ; true: tu dua cua so ve vi tri/kich thuoc da luu
 ; Cac muc duoi day chi la GIA TRI MAC DINH. Doi bang cua so "Cai dat" (bam chuot phai
-; bieu tuong script o khay he thong, hoac bam doi vao no). Cai dat luu o
+; bieu tuong script o khay he thong). Bam trai de tam dung hoac tiep tuc. Cai dat luu o
 ; %LOCALAPPDATA%\VoiceToApp\Settings.ini, dung chung cho ca 4 ban.
 HOTKEY_ON := true              ; true: dung phim tat bat/tat ghi am (false: chi dung nut mic noi)
 HOTKEY_TOGGLE := "F8"          ; phim tat bat/tat ghi am. Doi tu cua so Cai dat (neu Word xung dot, doi sang to hop khac hoac tat)
@@ -444,9 +444,11 @@ OnAnyClick() {
 
 CheckClickedInput() {
     global recheck
-    if (recording || toggling || !micGui)
+    if (A_IsSuspended || recording || toggling || !micGui)
         return                           ; dang ghi am: giu nguyen nut de con bam dung
     ok := LooksLikeInput(clickX, clickY, &why)
+    if (A_IsSuspended || !micGui)
+        return                           ; co the da tam dung trong luc truy van UI Automation
     ; Chromium/Electron (Zalo, Teams...) dung cay truy cap cham sau cu bam dau: hoi lai mot lan
     if (!ok && recheck > 0 && InStr(lastFw, "Chrome")) {
         recheck := 0
@@ -743,15 +745,37 @@ SaveSettings() {
 }
 
 SetupTray() {
-    A_IconTip := "VoiceToApp - " APP_NAME
+    A_IconTip := "VoiceToApp - " APP_NAME " - Đang chạy"
+    A_TrayMenu.Delete("&Suspend Hotkeys")
+    A_TrayMenu.Delete("&Pause Script")
     A_TrayMenu.Add()
+    A_TrayMenu.Add("Tạm dừng", TrayToggleRun)
+    A_TrayMenu.Default := "Tạm dừng"
+    A_TrayMenu.ClickCount := 1
     A_TrayMenu.Add("Cai dat...", (*) => ShowSettings())
     A_TrayMenu.Add("Hien nut mic noi", TrayToggleMic)
     A_TrayMenu.Add("Dua cua so " APP_NAME " ve vi tri da luu", (*) => ArrangeNow())
     A_TrayMenu.Add("Xem thong tin cua so duoi chuot (sau 3 giay)", (*) => WinInfoLater())
-    A_TrayMenu.Default := "Cai dat..."
     if cfgOn
         A_TrayMenu.Check("Hien nut mic noi")
+}
+
+TrayToggleRun(itemName, *) {
+    Critical
+    if (recording || toggling) {
+        Tip(recording ? "Hãy kết thúc lượt ghi âm trước khi tạm dừng VoiceToApp."
+            : "VoiceToApp đang xử lý. Hãy bấm lại khi thao tác hoàn tất.")
+        return
+    }
+    if (calibName != "") {
+        Tip("Hãy lưu hoặc hủy cài vị trí nút trước khi tạm dừng VoiceToApp.")
+        return
+    }
+    Suspend(-1)
+    SetTimer(CheckClickedInput, 0)
+    ApplyMicSettings()
+    A_TrayMenu.Rename(itemName, A_IsSuspended ? "Tiếp tục" : "Tạm dừng")
+    A_IconTip := "VoiceToApp - " APP_NAME (A_IsSuspended ? " - Đang tạm dừng" : " - Đang chạy")
 }
 
 TrayToggleMic(*) {
@@ -765,7 +789,8 @@ TrayToggleMic(*) {
 ApplyMicSettings() {
     MicDestroy()
     if cfgOn {
-        MicInit()
+        if !A_IsSuspended
+            MicInit()
         A_TrayMenu.Check("Hien nut mic noi")
     } else {
         A_TrayMenu.Uncheck("Hien nut mic noi")
@@ -903,6 +928,10 @@ ShowSettings(tabNo := 1) {
         Tip("Da luu cai dat.", 2000)
     }
     CalibBtn(name, *) {
+        if A_IsSuspended {
+            Tip("Hãy tiếp tục VoiceToApp trước khi cài vị trí nút.")
+            return
+        }
         Collect()
         CloseWin()
         StartCalib(name)
@@ -941,7 +970,7 @@ ShowSettings(tabNo := 1) {
 ; Phim tat hoac bam nut mic. Chong chay chong cheo khi bam lien tiep.
 ToggleVoice() {
     global toggling
-    if toggling
+    if (A_IsSuspended || toggling)
         return
     toggling := true
     try {

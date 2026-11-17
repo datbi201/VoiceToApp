@@ -7,8 +7,14 @@ Script AutoHotkey v2 cho Windows. Bạn nói bằng giọng nói ở ứng dụn
 - **Phím tắt bật/tắt ghi âm** (mặc định F8, làm việc như bấm nút mic): đổi sang tổ hợp khác hoặc tắt hẳn trong **Cài đặt > Phím tắt**. Từ Rev5.6 không còn phím F9, F10, F11, F12 cố định (hay xung đột với Microsoft Word).
 - **Cài vị trí nút, đưa cửa sổ về chỗ cũ, xem thông tin cửa sổ**: làm trong cửa sổ Cài đặt hoặc menu khay hệ thống.
 
+## Tạm dừng và tiếp tục
+
+Bấm trái **một lần** vào biểu tượng VoiceToApp ở khay hệ thống (cạnh đồng hồ) để tạm dừng. Nút mic nổi sẽ ẩn, phím tắt ghi âm được nhả về cho ứng dụng đang dùng. Bấm trái lần nữa để tiếp tục. Rê chuột lên biểu tượng để xem trạng thái **Đang chạy** hoặc **Đang tạm dừng**.
+
+Nếu đang ghi âm, hãy kết thúc lượt ghi trước khi tạm dừng. Khi đang cài vị trí nút, hãy lưu hoặc hủy thao tác trước.
+
 ## Cửa sổ Cài đặt
-Bấm chuột phải biểu tượng script ở khay hệ thống (cạnh đồng hồ), chọn **Cài đặt...** (hoặc bấm đúp biểu tượng). Có ba thẻ:
+Bấm chuột phải vào biểu tượng VoiceToApp ở khay hệ thống và chọn **Cai dat...**. Có ba thẻ:
 - **Vị trí nút**: cài nút Mic, ô nhập và nút Dừng của ứng dụng AI. Bấm "Cài", cửa sổ ẩn đi, rê chuột lên đúng nút trong ứng dụng AI rồi bấm Enter (Esc để huỷ). Làm một lần, các lần sau dùng lại.
 - **Phím tắt**: bật/tắt và đổi phím bật/tắt ghi âm.
 - **Nút mic nổi**: ở thẻ này bạn:
@@ -28,10 +34,10 @@ Chỉ chạy một bản mỗi lúc, vì các bản dùng chung phím tắt bậ
 
 ## Các file
 ```
-├── VoiceToApp_Claude_Rev5.6.ahk   # Claude Desktop
-├── VoiceToApp_Agy_Rev5.6.ahk      # Antigravity
-├── VoiceToApp_Gemini_Rev5.6.ahk   # Gemini (trong trình duyệt)
-├── VoiceToApp_GPT_Rev5.6.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
+├── VoiceToApp_Claude_Rev5.7.ahk   # Claude Desktop
+├── VoiceToApp_Agy_Rev5.7.ahk      # Antigravity
+├── VoiceToApp_Gemini_Rev5.7.ahk   # Gemini (trong trình duyệt)
+├── VoiceToApp_GPT_Rev5.7.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
 ├── template/                      # Mẫu chung và script sinh 4 bản
 ├── CLAUDE.md                      # Quy tắc dự án (cho Claude Code)
 ├── BAN-GIAO.md                    # Trạng thái và việc đang chờ

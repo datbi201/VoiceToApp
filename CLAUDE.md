@@ -11,7 +11,7 @@ Script AutoHotkey v2 cho Windows. Người dùng ở lại phần mềm A (Zalo,
 - Toạ độ nút và nhật ký của từng máy nằm ở `%LOCALAPPDATA%\VoiceToApp\` (file `.ini`, `.log`). Không đưa lên git.
 
 ## Quy tắc đánh số Rev
-- Hiện tại là **Rev5.6**. Mỗi lần sửa tăng một bậc: 5.2, 5.3, 5.4...
+- Hiện tại là **Rev5.7**. Mỗi lần sửa tăng một bậc: 5.2, 5.3, 5.4...
 - Chỉ lên **6.0** khi người dùng nói rõ "lên 6.0".
 - Bốn bản luôn cùng số Rev, luôn sửa cùng lúc. Chỉ khác hai dòng cấu hình: `APP_NAME` và danh sách cửa sổ cần tìm `B_CANDIDATES`.
 - Tên file: `VoiceToApp_<Claude|Agy|Gemini|GPT>_Rev<số>.ahk`. Dòng đầu phần chú thích trong file ghi đúng số Rev.

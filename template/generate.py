@@ -14,7 +14,7 @@ import pathlib
 import re
 import sys
 
-REV = "5.6"
+REV = "5.7"
 
 # Ten ban -> danh sach mau cua so can tim (AutoHotkey WinTitle, khop theo thu tu)
 APPS = {
@@ -86,7 +86,9 @@ def lint(text, label):
                     names.append((prm, i, "tham so"))
         for mm in re.finditer(r'(?<![\w.&])([A-Za-z_]\w*)\s*(?::=|\+=|-=|\.=)', code):
             names.append((mm.group(1), i, "bien gan gia tri"))
-        for mm in re.finditer(r'&([A-Za-z_]\w*)', code):
+        # Dau & trong chuoi (vi du "&Pause Script") la phim tat cua menu.
+        code_without_strings = re.sub(r""" "(?:`.|[^"`])*" | '(?:`.|[^'`])*' """, "", code, flags=re.VERBOSE)
+        for mm in re.finditer(r'&([A-Za-z_]\w*)', code_without_strings):
             names.append((mm.group(1), i, "bien dau ra"))
         mm = re.match(r'^\s*(?:global|local|static)\s+(.*)$', code)
         if mm:

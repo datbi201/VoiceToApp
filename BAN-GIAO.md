@@ -1,12 +1,14 @@
 # Bàn giao: VoiceToApp
 
-Cập nhật: 17/11/2026
+Cập nhật: 18/11/2026
 
 ## Trạng thái hiện tại
-- **Rev mới nhất: 5.4**, bốn file: `VoiceToApp_Claude_Rev5.6.ahk`, `VoiceToApp_Agy_Rev5.6.ahk`, `VoiceToApp_Gemini_Rev5.6.ahk`, `VoiceToApp_GPT_Rev5.6.ahk`.
-- Rev5.6 thêm **nút mic nổi** trên ô nhập chữ (bấm nút = bật/tắt ghi âm, nhấp nháy đỏ khi ghi âm). Rev5.6 bỏ F9-F12 cố định, cài vị trí nút qua cửa sổ Cài đặt, phím bật/tắt ghi âm đổi/tắt được. Rev5.3 (sửa lỗi trùng tên hàm Beep) cũng **chưa thử trên máy thật**, nên cả hai cần thử.
+- **Rev mới nhất: 5.7**, bốn file: `VoiceToApp_Claude_Rev5.7.ahk`, `VoiceToApp_Agy_Rev5.7.ahk`, `VoiceToApp_Gemini_Rev5.7.ahk`, `VoiceToApp_GPT_Rev5.7.ahk`. Bốn launcher ở thư mục gốc mở Rev5.7.
+- Rev5.7: bấm trái một lần vào biểu tượng khay để tạm dừng hoặc tiếp tục. Khi tạm dừng, phím tắt ghi âm được nhả và nút mic nổi ẩn đi. Bấm chuột phải để mở Cài đặt. Kết thúc lượt ghi âm hoặc thao tác cài vị trí đang mở trước khi tạm dừng.
+- Kiểm tra Rev5.7 trên AutoHotkey v2.0.31: cả bốn bản qua kiểm tra cú pháp. Bản Agy thử với cấu hình riêng và tín hiệu bấm trái của khay Windows: nút mic được ẩn và phục hồi theo cài đặt, phím tắt được nhả và đăng ký lại, tên lệnh và trạng thái trên biểu tượng đổi đúng, và lượt ghi âm hoặc thao tác đang thực hiện được giữ. Chưa thử bằng chuột thật hoặc chạy lại luồng ghi âm và dán chữ với ứng dụng AI.
+- Rev5.6 bỏ F9-F12 cố định, cài vị trí nút qua cửa sổ Cài đặt và cho phép đổi hoặc tắt phím ghi âm. Nút mic nổi xuất hiện cạnh ô nhập chữ và nhấp nháy đỏ khi ghi âm.
 - Điểm mới của dòng Rev5.2 trở đi: lưu vị trí, kích thước cửa sổ B, tự đưa về đúng chỗ mỗi lần bật/dừng ghi âm.
-- Rev cũ nằm ở `03_ONEDRIVE_BACKUP\revisions` (gồm Rev5.1 đến 5.5).
+- Rev cũ nằm ở `03_ONEDRIVE_BACKUP\revisions` (gồm Rev5.1 đến 5.6).
 - Mẫu chung và script sinh file nằm ở `template\`. Sửa mẫu, rồi chạy `python template\generate.py`. Script này tự kiểm tra trùng tên hàm và biến.
 - Commit: bấm đúp `commit_rev.bat` ở thư mục gốc dự án (ngoài repo). Danh tính: `datbi201`, email noreply có mã số.
 
@@ -28,7 +30,7 @@ Cập nhật: 17/11/2026
 - Gemini và GPT trong trình duyệt: tab phải đang hiển thị (tiêu đề cửa sổ chứa chữ Gemini hoặc ChatGPT). Nên dùng cửa sổ riêng.
 - Toạ độ lưu riêng cho từng máy và từng bản (`Claude.ini`, `Agy.ini`, `Gemini.ini`, `GPT.ini`).
 - Chưa có cách tự phát hiện người dùng ngừng nói. Bấm nút mic (hoặc phím tắt) lần 2 để dừng.
-- Môi trường soạn thảo không có AutoHotkey, nên lỗi chỉ lộ khi người dùng chạy trên Windows. Bộ kiểm tra trùng tên trong `generate.py` chỉ bắt được lỗi trùng tên, không thay cho việc chạy thử.
+- Bộ kiểm tra trùng tên trong `generate.py` chạy khi sinh bản mới. Trên Windows có AutoHotkey v2, dùng thêm chế độ kiểm tra cú pháp và chạy thử thao tác trên bản mới.
 
 ## Chưa làm / có thể làm sau
 - Bản tự tìm nút bằng cây giao diện (UI Automation). Chưa làm vì Electron chỉ lộ cây này khi bật hỗ trợ trợ năng.
