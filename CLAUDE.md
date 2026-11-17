@@ -11,7 +11,7 @@ Script AutoHotkey v2 cho Windows. Người dùng ở lại phần mềm A (Zalo,
 - Toạ độ nút và nhật ký của từng máy nằm ở `%LOCALAPPDATA%\VoiceToApp\` (file `.ini`, `.log`). Không đưa lên git.
 
 ## Quy tắc đánh số Rev
-- Hiện tại là **Rev5.4**. Mỗi lần sửa tăng một bậc: 5.2, 5.3, 5.4...
+- Hiện tại là **Rev5.5**. Mỗi lần sửa tăng một bậc: 5.2, 5.3, 5.4...
 - Chỉ lên **6.0** khi người dùng nói rõ "lên 6.0".
 - Bốn bản luôn cùng số Rev, luôn sửa cùng lúc. Chỉ khác hai dòng cấu hình: `APP_NAME` và danh sách cửa sổ cần tìm `B_CANDIDATES`.
 - Tên file: `VoiceToApp_<Claude|Agy|Gemini|GPT>_Rev<số>.ahk`. Dòng đầu phần chú thích trong file ghi đúng số Rev.
@@ -34,7 +34,7 @@ Script AutoHotkey v2 cho Windows. Người dùng ở lại phần mềm A (Zalo,
 - Chờ chữ bằng cách copy lặp đến khi hai lần liên tiếp giống nhau, không chờ cố định.
 - Xoá ô nhập của B bằng Ctrl+A rồi BackSpace (phím Delete không xoá được).
 - Tiếng bip tắt mặc định (`BEEP := false`). Hàm phát bip tên `PlayBeep`, hàm ghi nhật ký tên `WriteLog`. AutoHotkey v2 không cho tên biến trùng tên hàm (không phân biệt hoa thường, kể cả hàm dựng sẵn như `Log`). Lỗi này chỉ lộ khi chạy trên Windows (Rev5.2 hỏng vì hàm `Beep` trùng biến `BEEP`). Vì vậy `template\generate.py` tự kiểm tra trùng tên trước khi ghi file. Không bỏ bước này, và khi thêm hàm hoặc biến mới thì đặt tên không trùng nhau.
-- Rev5.4: nút mic nổi (`MicInit`, `MicShowAt`, `MicTick`, `LooksLikeInput`, `UiaProbe`). Nút là cửa sổ AutoHotkey `WS_EX_NOACTIVATE` nên không cướp focus của A; bấm nút gọi lại `ToggleVoice()` như F8. Hook chuột `~LButton` chỉ kiểm tra rồi hiện hoặc ẩn nút, không chặn chuột. Chỉ số hàm UIA (vtable) ghi chú ngay trên `UiaProbe`; đừng đổi nếu chưa thử. `ToggleVoice` giờ là lớp bọc có cờ `toggling` quanh `ToggleCore` để F8 và nút mic không chạy chồng.
+- Rev5.4: nút mic nổi (`MicInit`, `MicShowAt`, `MicTick`, `LooksLikeInput`, `UiaProbe`). Nút là cửa sổ AutoHotkey `WS_EX_NOACTIVATE` nên không cướp focus của A; bấm nút gọi lại `ToggleVoice()` như F8. Hook chuột `~LButton` chỉ kiểm tra rồi hiện hoặc ẩn nút, không chặn chuột. Chỉ số hàm UIA (vtable) ghi chú ngay trên `UiaProbe`; đừng đổi nếu chưa thử. Rev5.5: `ClassifyInput` theo quy tắc của AI_Voice_Typer_Rev2_9 (Edit/ComboBox, ARIA textbox, Document ghi được, Group/Custom/Pane ghi được) để nhận ô chat Chromium/Electron như Zalo; cài đặt nút mic và danh sách ứng dụng loại trừ lưu ở `Settings.ini` (chung cho 4 bản), sửa qua cửa sổ mở từ menu khay. `ToggleVoice` giờ là lớp bọc có cờ `toggling` quanh `ToggleCore` để F8 và nút mic không chạy chồng.
 - Phím tắt: F8 bật/tắt, F9 cài nút mic, F10 cài ô nhập, F11 cài nút dừng, F12 đưa cửa sổ về vị trí đã lưu, Ctrl+Shift+F12 xem tên tiến trình và tiêu đề.
 
 ## Môi trường thử
