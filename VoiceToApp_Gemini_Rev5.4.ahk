@@ -1,15 +1,15 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 ; ============================================================
-; VoiceToApp - Claude - Rev5.3
-; Ban o cua so A. F8 bat/tat mic cua Claude, chu duoc dan ve A.
+; VoiceToApp - Gemini - Rev5.4
+; Ban o cua so A. F8 bat/tat mic cua Gemini, chu duoc dan ve A.
 ; Chi dung toa do (khong nhan dien hinh anh) de chay nhanh.
 ;
 ; CAI DAT MOT LAN: F9 (nut Mic), F10 (o nhap chu), F11 (nut Dung).
 ; Toa do + vi tri + kich thuoc cua so duoc luu vao
-;   %LOCALAPPDATA%\VoiceToApp\Claude.ini
+;   %LOCALAPPDATA%\VoiceToApp\Gemini.ini
 ; nen khong mat khi tat may. Moi lan bam F8 (hoac F12), script tu dua
-; cua so Claude ve dung vi tri/kich thuoc da luu.
+; cua so Gemini ve dung vi tri/kich thuoc da luu.
 ; Chi can cai lai khi ban chu dong doi vi tri/kich thuoc cua so.
 ; ============================================================
 CoordMode "Mouse", "Screen"
@@ -20,12 +20,16 @@ SetMouseDelay 0
 SetKeyDelay 0
 
 ; ===== CAU HINH =====
-APP_NAME := "Claude"
+APP_NAME := "Gemini"
 ; Cac mau cua so can tim, thu lan luot. Xem ten tien trinh/tieu de that bang Ctrl+Shift+F12.
-B_CANDIDATES := ["ahk_exe claude.exe"]
+B_CANDIDATES := ["ahk_exe Gemini.exe", "Gemini ahk_exe chrome.exe", "Gemini ahk_exe msedge.exe", "Gemini ahk_exe firefox.exe"]
 RETURN_TO_A := true            ; true: bat mic xong quay ve A ngay
 BEEP := false                  ; true: phat tieng bip (cao = bat dau ghi, thap = da dan xong)
 AUTO_LAYOUT := true            ; true: tu dua cua so ve vi tri/kich thuoc da luu
+MIC_ICON := true               ; true: bam vao o nhap chu o cua so A thi hien nut mic nho; bam nut = F8
+MIC_SIZE := 30                 ; kich thuoc nut mic (px, o ti le 100%)
+MIC_BLINK_MS := 400            ; chu ky nhap nhay cua nut mic khi dang ghi am (ms)
+MIC_USE_UIA := true            ; true: dung UI Automation de nhan biet o nhap chu (chinh xac hon)
 FOCUS_DELAY := 80              ; ms cho cua so on dinh truoc khi bam
 BACK_DELAY := 150              ; ms sau khi bam mic, truoc khi quay ve A
 STOP_WAIT := 250               ; ms sau khi bam dung, truoc khi copy chu
@@ -42,17 +46,33 @@ try {
         FileDelete(logFile)
 }
 recording := false
+toggling := false
 targetA := 0
 bProc := ""
+uiaObj := 0
+micGui := 0
+micBtn := 0
+micSize := 0
+micShown := false
+micPhase := false
+micColor := ""
+micHost := 0
+clickX := 0
+clickY := 0
+clickWin := 0
+if MIC_ICON
+    MicInit()
 
 ; --- PHIM TAT ---
 ; F8 : bat dau noi / dung va chuyen chu sang A
-; F9 : (cai dat) re chuot len nut MIC cua Claude, bam F9
-; F10: (cai dat) re chuot len O NHAP CHU cua Claude, bam F10
+; F9 : (cai dat) re chuot len nut MIC cua Gemini, bam F9
+; F10: (cai dat) re chuot len O NHAP CHU cua Gemini, bam F10
 ; F11: (cai dat, neu co) dang ghi am, re chuot len nut DUNG/XAC NHAN, bam F11
-; F12: dua cua so Claude ve dung vi tri/kich thuoc da luu (khong can bat mic)
-; Ctrl+Shift+F12: xem ten tien trinh va tieu de cua cua so duoi con tro chuot
+; F12: dua cua so Gemini ve dung vi tri/kich thuoc da luu (khong can bat mic)
+; Ctrl+Shift+F12: xem ten tien trinh, tieu de cua cua so duoi con tro chuot va ket qua nhan biet o nhap chu
+; Chuot trai (khong chan chuot): kiem tra xem vua bam vao o nhap chu chua de hien nut mic
 F8:: ToggleVoice()
+~LButton:: OnAnyClick()
 F9:: Calib("Mic")
 F10:: Calib("Input")
 F11:: Calib("Stop")
@@ -80,8 +100,9 @@ SetPos(x, y) {
 }
 
 ShowWinInfo() {
-    MouseGetPos(, , &h)
-    Tip("Tien trinh: " WinGetProcessName(h) " | Tieu de: " WinGetTitle(h), 7000)
+    MouseGetPos(&mx, &my, &h)
+    ok := LooksLikeInput(mx, my, &why)
+    Tip("Tien trinh: " WinGetProcessName(h) " | Tieu de: " WinGetTitle(h) " | O nhap chu (cua so dang active): " (ok ? "CO" : "khong") " [" why "]", 9000)
 }
 
 ; Tim cua so B theo danh sach mau, tra ve 0 neu khong thay
@@ -296,7 +317,211 @@ BackToA() {
         ActivateWin(targetA)
 }
 
+; ---------- NUT MIC NHO TREN O NHAP CHU ----------
+; Bam vao o nhap chu (o cua so A) -> hien nut mic tron nho canh con tro.
+; Bam nut mic = bam F8. Khi dang ghi am nut nhap nhay do. Nut khong cuop focus cua A.
+
+MicInit() {
+    global micGui, micBtn, micSize
+    micSize := Round(MIC_SIZE * A_ScreenDPI / 96)
+    ; E0x08000000 = WS_EX_NOACTIVATE: bam vao nut khong lam cua so A mat focus
+    micGui := Gui("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x08000000")
+    micGui.MarginX := 0
+    micGui.MarginY := 0
+    micGui.BackColor := "2B6CB0"
+    micGui.SetFont("s" Max(8, Round(MIC_SIZE * 0.45)) " cFFFFFF", "Segoe MDL2 Assets")
+    ; 0x200 = can giua doc, 0x100 = nhan su kien bam
+    micBtn := micGui.Add("Text", "x0 y0 w" micSize " h" micSize " Center 0x200 0x100 BackgroundTrans", Chr(0xE720))
+    micBtn.OnEvent("Click", MicClicked)
+    micGui.Show("Hide w" micSize " h" micSize)
+    rgn := DllCall("CreateEllipticRgn", "int", 0, "int", 0, "int", micSize + 1, "int", micSize + 1, "ptr")
+    DllCall("SetWindowRgn", "ptr", micGui.Hwnd, "ptr", rgn, "int", 1)
+    SetTimer(MicTick, MIC_BLINK_MS)
+}
+
+MicClicked(*) {
+    WriteLog("Bam nut mic noi")
+    ToggleVoice()
+}
+
+MicPaint(col) {
+    global micColor
+    if (col = micColor)
+        return
+    micColor := col
+    micGui.BackColor := col
+    DllCall("InvalidateRect", "ptr", micGui.Hwnd, "ptr", 0, "int", 1)
+    micBtn.Redraw()
+}
+
+MicHide() {
+    global micShown
+    if micShown {
+        micGui.Hide()
+        micShown := false
+    }
+}
+
+; Hien nut mic phia tren ben phai diem vua bam, giu trong vung lam viec cua man hinh
+MicShowAt(x, y) {
+    global micShown, micHost
+    px := x + 16
+    py := y - micSize - 16
+    Loop MonitorGetCount() {
+        MonitorGetWorkArea(A_Index, &l, &t, &r, &b)
+        if (x >= l && x < r && y >= t && y < b) {
+            if (py < t)
+                py := y + 24
+            px := Max(l + 4, Min(px, r - micSize - 4))
+            py := Max(t + 4, Min(py, b - micSize - 4))
+            break
+        }
+    }
+    micHost := WinExist("A")
+    MicPaint(recording ? "E53935" : "2B6CB0")
+    micGui.Show("NA x" px " y" py)
+    micShown := true
+}
+
+; Chay moi MIC_BLINK_MS: nhap nhay khi dang ghi am, an nut khi nguoi dung chuyen sang cua so khac
+MicTick() {
+    global micPhase
+    if !micShown
+        return
+    if recording {
+        micPhase := !micPhase
+        MicPaint(micPhase ? "E53935" : "4A1014")
+        return
+    }
+    micPhase := false
+    MicPaint("2B6CB0")
+    if toggling
+        return
+    cur := WinExist("A")
+    if (cur && cur != micHost && cur != micGui.Hwnd)
+        MicHide()
+}
+
+OnAnyClick() {
+    global clickX, clickY, clickWin
+    if !MIC_ICON
+        return
+    MouseGetPos(&clickX, &clickY, &clickWin)
+    if (micGui && clickWin = micGui.Hwnd)
+        return                           ; bam vao chinh nut mic: de MicClicked xu ly
+    SetTimer(CheckClickedInput, -140)    ; cho focus on dinh roi moi kiem tra
+}
+
+CheckClickedInput() {
+    if (recording || toggling)
+        return                           ; dang ghi am: giu nguyen nut de con bam dung
+    ok := LooksLikeInput(clickX, clickY, &why)
+    WriteLog("Bam chuot " clickX "," clickY " -> " (ok ? "O NHAP" : "khong phai o nhap") " [" why "]")
+    if ok
+        MicShowAt(clickX, clickY)
+    else
+        MicHide()
+}
+
+; Nhan biet focus hien tai co phai o nhap chu khong. why = ly do (de xem trong nhat ky).
+LooksLikeInput(x, y, &why) {
+    why := ""
+    hwndA := WinExist("A")
+    if !hwndA {
+        why := "khong co cua so active"
+        return false
+    }
+    if (micGui && hwndA = micGui.Hwnd) {
+        why := "cua so mic"
+        return false
+    }
+    pn := ""
+    try pn := WinGetProcessName(hwndA)
+    bw := FindB()
+    if (bw && pn = WinGetProcessName(bw)) {
+        why := "dang o cua so " APP_NAME
+        return false
+    }
+    shape := A_Cursor
+    caret := HasCaret(hwndA)
+    info := MIC_USE_UIA ? UiaProbe() : 0
+    why := pn " | uia=" (info ? info.ctype : "-") " caret=" caret " con tro=" shape
+    if info {
+        if (info.ctype = 50004) {        ; UIA_EditControlTypeId
+            if info.pwd {
+                why .= " | o mat khau"
+                return false
+            }
+            if !info.en {
+                why .= " | o bi khoa"
+                return false
+            }
+            if (info.r > info.l && (x < info.l - 24 || x > info.r + 24 || y < info.t - 24 || y > info.b + 24)) {
+                why .= " | bam ngoai o nhap (" info.l "," info.t "," info.r "," info.b ")"
+                return false
+            }
+            return true
+        }
+    }
+    ; Phan mem cu (Word, Notepad, ...) hoac UIA khong thay: co dau nhay (caret) va con tro hinh chu I
+    if (caret && shape = "IBeam")
+        return true
+    return false
+}
+
+; Cua so dang active co caret he thong khong (Word, Notepad, o nhap Win32...)
+HasCaret(hwnd) {
+    tid := DllCall("GetWindowThreadProcessId", "ptr", hwnd, "ptr", 0, "uint")
+    gti := Buffer(8 + 6 * A_PtrSize + 16, 0)
+    NumPut("uint", gti.Size, gti, 0)
+    if !DllCall("GetGUIThreadInfo", "uint", tid, "ptr", gti)
+        return false
+    return NumGet(gti, 8 + 5 * A_PtrSize, "ptr") != 0
+}
+
+; Hoi UI Automation phan tu dang co focus. Tra ve 0 neu khong doc duoc.
+; Chi so ham (vtable): IUIAutomation 8 = GetFocusedElement;
+; IUIAutomationElement 21 = ControlType, 28 = IsEnabled, 35 = IsPassword, 43 = BoundingRectangle
+UiaProbe() {
+    global uiaObj
+    el := 0
+    try {
+        if !IsObject(uiaObj)
+            uiaObj := ComObject("{ff48dba4-60ef-4201-aa87-54103eef594e}", "{30cbe57d-d9d0-452a-ab13-7ac5ac4825ee}")
+        ComCall(8, uiaObj, "ptr*", &el)
+        if !el
+            return 0
+        ct := 0
+        pw := 0
+        en := 0
+        rc := Buffer(16, 0)
+        ComCall(21, el, "int*", &ct)
+        ComCall(35, el, "int*", &pw)
+        ComCall(28, el, "int*", &en)
+        ComCall(43, el, "ptr", rc)
+        ObjRelease(el)
+        return {ctype: ct, pwd: (pw != 0), en: (en != 0), l: NumGet(rc, 0, "int"), t: NumGet(rc, 4, "int"), r: NumGet(rc, 8, "int"), b: NumGet(rc, 12, "int")}
+    } catch {
+        if el
+            ObjRelease(el)
+        return 0
+    }
+}
+
+; F8 hoac bam nut mic. Chong chay chong cheo khi bam lien tiep.
 ToggleVoice() {
+    global toggling
+    if toggling
+        return
+    toggling := true
+    try {
+        ToggleCore()
+    } finally {
+        toggling := false
+    }
+}
+
+ToggleCore() {
     global recording, targetA, bProc
     t0 := A_TickCount
     bHwnd := FindB()

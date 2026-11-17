@@ -4,9 +4,10 @@ Script AutoHotkey v2 cho Windows. Bạn nói bằng giọng nói ở ứng dụn
 
 ## Phím tắt
 - **F8**: lần 1 bật mic ở ứng dụng AI rồi quay về cửa sổ của bạn. Lần 2 dừng mic, lấy chữ, xoá ô nhập và dán vào cửa sổ của bạn.
+- **Nút mic nổi** (từ Rev5.4): bấm vào ô nhập chữ ở cửa sổ của bạn (Zalo, Telegram, Word...) thì một nút mic tròn nhỏ hiện cạnh con trỏ. Bấm nút = bấm F8. Khi đang ghi âm nút nhấp nháy đỏ. Bấm lần nữa để dừng và dán chữ về. Nút không cướp focus của ô nhập.
 - **F9 / F10 / F11**: cài đặt vị trí nút Mic, ô nhập và nút Dừng (rê chuột lên đúng chỗ rồi bấm).
 - **F12**: đưa cửa sổ ứng dụng AI về đúng vị trí và kích thước đã cài.
-- **Ctrl+Shift+F12**: xem tên tiến trình và tiêu đề của cửa sổ dưới con trỏ.
+- **Ctrl+Shift+F12**: xem tên tiến trình, tiêu đề của cửa sổ dưới con trỏ và kết quả nhận biết ô nhập chữ.
 
 ## Cài đặt (làm một lần)
 1. Cài [AutoHotkey v2](https://www.autohotkey.com/).
@@ -20,10 +21,10 @@ Chỉ chạy một bản mỗi lúc, vì các bản dùng chung phím tắt.
 
 ## Các file
 ```
-├── VoiceToApp_Claude_Rev5.3.ahk   # Claude Desktop
-├── VoiceToApp_Agy_Rev5.3.ahk      # Antigravity
-├── VoiceToApp_Gemini_Rev5.3.ahk   # Gemini (trong trình duyệt)
-├── VoiceToApp_GPT_Rev5.3.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
+├── VoiceToApp_Claude_Rev5.4.ahk   # Claude Desktop
+├── VoiceToApp_Agy_Rev5.4.ahk      # Antigravity
+├── VoiceToApp_Gemini_Rev5.4.ahk   # Gemini (trong trình duyệt)
+├── VoiceToApp_GPT_Rev5.4.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
 ├── template/                      # Mẫu chung và script sinh 4 bản
 ├── CLAUDE.md                      # Quy tắc dự án (cho Claude Code)
 ├── BAN-GIAO.md                    # Trạng thái và việc đang chờ

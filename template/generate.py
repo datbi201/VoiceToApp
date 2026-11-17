@@ -14,13 +14,14 @@ import pathlib
 import re
 import sys
 
-REV = "5.3"
+REV = "5.4"
 
 # Ten ban -> danh sach mau cua so can tim (AutoHotkey WinTitle, khop theo thu tu)
 APPS = {
     "Claude": ['"ahk_exe claude.exe"'],
     "Agy": ['"ahk_exe Antigravity.exe"'],
     "Gemini": [
+        '"ahk_exe Gemini.exe"',          # nguoi dung tu them vao ban Rev5.3 (giu lai de khong mat khi sinh lai)
         '"Gemini ahk_exe chrome.exe"',
         '"Gemini ahk_exe msedge.exe"',
         '"Gemini ahk_exe firefox.exe"',
