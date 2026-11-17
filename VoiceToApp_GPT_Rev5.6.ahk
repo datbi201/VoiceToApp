@@ -1,14 +1,16 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 ; ============================================================
-; VoiceToApp - GPT - Rev5.5
-; Ban o cua so A. F8 bat/tat mic cua GPT, chu duoc dan ve A.
+; VoiceToApp - GPT - Rev5.6
+; Ban o cua so A. Bam vao o nhap chu thi hien nut mic nho; bam nut mic (hoac phim tat
+; bat/tat ghi am, mac dinh F8) de bat/dung mic cua GPT, chu duoc dan ve A.
 ; Chi dung toa do (khong nhan dien hinh anh) de chay nhanh.
 ;
-; CAI DAT MOT LAN: F9 (nut Mic), F10 (o nhap chu), F11 (nut Dung).
+; CAI DAT MOT LAN: bam chuot phai bieu tuong script o khay he thong -> "Cai dat..."
+; -> the "Vi tri nut" (nut Mic, o nhap chu, nut Dung). Khong con dung F9/F10/F11/F12.
 ; Toa do + vi tri + kich thuoc cua so duoc luu vao
 ;   %LOCALAPPDATA%\VoiceToApp\GPT.ini
-; nen khong mat khi tat may. Moi lan bam F8 (hoac F12), script tu dua
+; nen khong mat khi tat may. Moi lan bat/dung mic, script tu dua
 ; cua so GPT ve dung vi tri/kich thuoc da luu.
 ; Chi can cai lai khi ban chu dong doi vi tri/kich thuoc cua so.
 ; ============================================================
@@ -21,15 +23,17 @@ SetKeyDelay 0
 
 ; ===== CAU HINH =====
 APP_NAME := "GPT"
-; Cac mau cua so can tim, thu lan luot. Xem ten tien trinh/tieu de that bang Ctrl+Shift+F12.
+; Cac mau cua so can tim, thu lan luot. Xem ten tien trinh/tieu de that: Cai dat -> Phim tat -> Xem thong tin cua so.
 B_CANDIDATES := ["ahk_exe ChatGPT.exe", "ChatGPT ahk_exe chrome.exe", "ChatGPT ahk_exe msedge.exe", "ChatGPT ahk_exe firefox.exe"]
 RETURN_TO_A := true            ; true: bat mic xong quay ve A ngay
 BEEP := false                  ; true: phat tieng bip (cao = bat dau ghi, thap = da dan xong)
 AUTO_LAYOUT := true            ; true: tu dua cua so ve vi tri/kich thuoc da luu
-; Nut mic noi: day chi la GIA TRI MAC DINH. Doi bang cua so "Cai dat nut mic"
-; (bam chuot phai bieu tuong script o khay he thong, hoac bam doi vao no). Cai dat luu o
+; Cac muc duoi day chi la GIA TRI MAC DINH. Doi bang cua so "Cai dat" (bam chuot phai
+; bieu tuong script o khay he thong, hoac bam doi vao no). Cai dat luu o
 ; %LOCALAPPDATA%\VoiceToApp\Settings.ini, dung chung cho ca 4 ban.
-MIC_ICON := true               ; true: bam vao o nhap chu o cua so A thi hien nut mic nho; bam nut = F8
+HOTKEY_ON := true              ; true: dung phim tat bat/tat ghi am (false: chi dung nut mic noi)
+HOTKEY_TOGGLE := "F8"          ; phim tat bat/tat ghi am. Doi tu cua so Cai dat (neu Word xung dot, doi sang to hop khac hoac tat)
+MIC_ICON := true               ; true: bam vao o nhap chu o cua so A thi hien nut mic nho; bam nut = bat/tat ghi am
 MIC_SIZE := 30                 ; kich thuoc nut mic (px, o ti le 100%)
 MIC_BLINK_MS := 400            ; chu ky nhap nhay cua nut mic khi dang ghi am (ms)
 MIC_USE_UIA := true            ; true: dung UI Automation de nhan biet o nhap chu (chinh xac hon)
@@ -73,27 +77,22 @@ cfgOn := MIC_ICON
 cfgUia := MIC_USE_UIA
 cfgSize := MIC_SIZE
 cfgBlink := MIC_BLINK_MS
+cfgKeyOn := HOTKEY_ON
+cfgKey := HOTKEY_TOGGLE
+activeKey := ""
+calibName := ""
 exclList := []
 LoadSettings()
 SetupTray()
+ApplyToggleKey()
 if cfgOn
     MicInit()
 
 ; --- PHIM TAT ---
-; F8 : bat dau noi / dung va chuyen chu sang A
-; F9 : (cai dat) re chuot len nut MIC cua GPT, bam F9
-; F10: (cai dat) re chuot len O NHAP CHU cua GPT, bam F10
-; F11: (cai dat, neu co) dang ghi am, re chuot len nut DUNG/XAC NHAN, bam F11
-; F12: dua cua so GPT ve dung vi tri/kich thuoc da luu (khong can bat mic)
-; Ctrl+Shift+F12: xem ten tien trinh, tieu de cua cua so duoi con tro chuot va ket qua nhan biet o nhap chu
+; Phim bat/tat ghi am: dang ky luc chay bang ApplyToggleKey() (doi duoc trong Cai dat, tat duoc hoan toan).
+; Cac viec F9/F10/F11/F12 cu nay nam trong cua so Cai dat va menu khay he thong.
 ; Chuot trai (khong chan chuot): kiem tra xem vua bam vao o nhap chu chua de hien nut mic
-F8:: ToggleVoice()
 ~LButton:: OnAnyClick()
-F9:: Calib("Mic")
-F10:: Calib("Input")
-F11:: Calib("Stop")
-F12:: ArrangeNow()
-^+F12:: ShowWinInfo()
 
 Tip(text, ms := 2500) {
     ToolTip(text, 20, 20)
@@ -163,7 +162,7 @@ Calib(name) {
             for k in ["Mic", "Input", "Stop"]
                 for ax in ["X", "Y"]
                     try IniDelete(ini, "B", k ax)
-            note := " | Kich thuoc cua so da doi: cac nut cu bi xoa, hay cai lai du F9, F10, F11."
+            note := " | Kich thuoc cua so da doi: cac nut cu bi xoa, hay cai lai du 3 vi tri (Cai dat > Vi tri nut)."
         }
     }
 
@@ -213,7 +212,7 @@ EnsureLayout(hwnd) {
     if (sx = "" || sy = "") {            ; file ini cu cua Rev5.1: chi co kich thuoc
         if RectMatch(hwnd, 0, 0, sw, sh, false)
             return true
-        Tip("Kich thuoc cua so " APP_NAME " da doi. Hay bam lai F9, F10, F11.", 5000)
+        Tip("Kich thuoc cua so " APP_NAME " da doi. Hay cai lai (Cai dat > Vi tri nut).", 5000)
         WriteLog("Ini cu: kich thuoc khong khop " sw "x" sh)
         return false
     }
@@ -228,12 +227,12 @@ EnsureLayout(hwnd) {
     if !AUTO_LAYOUT {
         if RectMatch(hwnd, sx, sy, sw, sh, false)
             return true                  ; chi khac vi tri, kich thuoc dung -> toa do tuong doi van dung
-        Tip("Kich thuoc cua so " APP_NAME " da doi. Hay bam lai F9, F10, F11.", 5000)
+        Tip("Kich thuoc cua so " APP_NAME " da doi. Hay cai lai (Cai dat > Vi tri nut).", 5000)
         return false
     }
 
     if !OnScreen(sx, sy, sw, sh) {
-        Tip("Vi tri da luu cua " APP_NAME " nam ngoai man hinh (da doi cach bo tri man hinh?). Hay bam lai F9, F10, F11.", 6000)
+        Tip("Vi tri da luu cua " APP_NAME " nam ngoai man hinh (da doi cach bo tri man hinh?). Hay cai lai (Cai dat > Vi tri nut).", 6000)
         WriteLog("Ngoai man hinh: " sx "," sy " " sw "x" sh)
         return false
     }
@@ -257,7 +256,7 @@ EnsureLayout(hwnd) {
     if RectMatch(hwnd, sx, sy, sw, sh, false)
         return true
     WinGetPos(, , &w, &h, hwnd)
-    Tip("Khong dua duoc " APP_NAME " ve dung kich thuoc (" w "x" h " thay vi " sw "x" sh "). Hay bam lai F9, F10, F11.", 6000)
+    Tip("Khong dua duoc " APP_NAME " ve dung kich thuoc (" w "x" h " thay vi " sw "x" sh "). Hay cai lai (Cai dat > Vi tri nut).", 6000)
     WriteLog("Khong khop sau WinMove: " w "x" h " thay vi " sw "x" sh)
     return false
 }
@@ -321,7 +320,7 @@ ClickBtn(hwnd, name) {
     x := IniRead(ini, "B", name "X", "")
     y := IniRead(ini, "B", name "Y", "")
     if (x = "" || y = "") {
-        Tip("Chua cai dat " name ". Bam F9 (Mic), F10 (O nhap), F11 (Dung).", 5000)
+        Tip("Chua cai dat vi tri " name ". Mo Cai dat (bieu tuong o khay) > Vi tri nut.", 5000)
         return false
     }
     WinGetPos &wx, &wy, , , hwnd
@@ -335,7 +334,7 @@ BackToA() {
 
 ; ---------- NUT MIC NHO TREN O NHAP CHU ----------
 ; Bam vao o nhap chu (o cua so A) -> hien nut mic tron nho canh con tro.
-; Bam nut mic = bam F8. Khi dang ghi am nut nhap nhay do. Nut khong cuop focus cua A.
+; Bam nut mic = bam phim bat/tat ghi am. Khi dang ghi am nut nhap nhay do. Nut khong cuop focus cua A.
 
 MicInit() {
     global micGui, micBtn, micSize
@@ -596,6 +595,95 @@ UiaProbe() {
     }
 }
 
+; ---------- PHIM TAT BAT/TAT GHI AM (doi duoc, tat duoc) ----------
+
+KeyToggle(*) {
+    ToggleVoice()
+}
+
+; Dang ky lai phim tat theo cai dat hien tai (cfgKeyOn, cfgKey)
+ApplyToggleKey() {
+    global activeKey
+    if (activeKey != "") {
+        try Hotkey(activeKey, "Off")
+        activeKey := ""
+    }
+    if (cfgKeyOn && cfgKey != "") {
+        try {
+            Hotkey(cfgKey, KeyToggle, "On")
+            activeKey := cfgKey
+        } catch as e {
+            Tip("Khong dat duoc phim tat '" cfgKey "': " e.Message, 6000)
+            WriteLog("Loi dat phim tat " cfgKey ": " e.Message)
+        }
+    }
+}
+
+; ---------- CAI VI TRI NUT (khong can phim F9/F10/F11) ----------
+; Bam "Cai" trong cua so Cai dat -> cua so an, GPT len tren cung -> re chuot len nut roi bam Enter.
+; Enter/Esc chi bi chiem trong luc dang cai (toi da 90 giay).
+
+CalibLabel(name) {
+    if (name = "Mic")
+        return "nut MIC (bat ghi am)"
+    if (name = "Input")
+        return "O NHAP CHU"
+    return "nut DUNG / XAC NHAN"
+}
+
+CalibStatus(name) {
+    x := IniRead(ini, "B", name "X", "")
+    y := IniRead(ini, "B", name "Y", "")
+    return (x = "" || y = "") ? "chua cai" : "da cai (" x ", " y ")"
+}
+
+StartCalib(name) {
+    global calibName
+    bHwnd := FindB()
+    if !bHwnd {
+        Tip("Khong tim thay cua so " APP_NAME ". Hay mo " APP_NAME " truoc roi cai lai.", 4000)
+        ShowSettings(1)
+        return
+    }
+    calibName := name
+    ActivateWin(bHwnd)
+    Hotkey("Enter", CalibEnter, "On")
+    Hotkey("NumpadEnter", CalibEnter, "On")
+    Hotkey("Escape", CalibCancel, "On")
+    ToolTip("Re chuot len " CalibLabel(name) " cua " APP_NAME ", roi bam Enter.  (Esc de huy)", 20, 20)
+    SetTimer(CalibCancel, -90000)
+}
+
+EndCalib() {
+    global calibName
+    SetTimer(CalibCancel, 0)
+    for k in ["Enter", "NumpadEnter", "Escape"] {
+        try Hotkey(k, "Off")
+    }
+    calibName := ""
+    ToolTip()
+}
+
+CalibEnter(*) {
+    name := calibName
+    EndCalib()
+    if (name != "")
+        Calib(name)
+    SetTimer(() => ShowSettings(1), -1200)
+}
+
+CalibCancel(*) {
+    EndCalib()
+    Tip("Da huy cai dat vi tri.", 1500)
+    ShowSettings(1)
+}
+
+; Menu khay: xem thong tin cua so duoi con tro sau 3 giay (de lay ten tien trinh/tieu de, kiem tra o nhap)
+WinInfoLater() {
+    Tip("Sau 3 giay se doc cua so duoi con tro chuot. Hay re chuot len cho can xem (o nhap chu cua ung dung khac).", 3000)
+    SetTimer(ShowWinInfo, -3200)
+}
+
 ; ---------- CAI DAT (cua so + menu khay he thong) ----------
 
 NormApp(name) {
@@ -617,7 +705,7 @@ IsExcludedApp(pn) {
 }
 
 LoadSettings() {
-    global cfgOn, cfgUia, cfgSize, cfgBlink, exclList
+    global cfgOn, cfgUia, cfgSize, cfgBlink, exclList, cfgKeyOn, cfgKey
     cfgOn := IniRead(settingsIni, "Mic", "Enabled", MIC_ICON ? 1 : 0) = 1
     cfgUia := IniRead(settingsIni, "Mic", "UseUIA", MIC_USE_UIA ? 1 : 0) = 1
     try {
@@ -637,6 +725,8 @@ LoadSettings() {
         if (item != "")
             exclList.Push(item)
     }
+    cfgKeyOn := IniRead(settingsIni, "Keys", "ToggleOn", HOTKEY_ON ? 1 : 0) = 1
+    cfgKey := Trim(IniRead(settingsIni, "Keys", "Toggle", HOTKEY_TOGGLE))
 }
 
 SaveSettings() {
@@ -648,14 +738,18 @@ SaveSettings() {
     for item in exclList
         s .= (s = "" ? "" : "|") item
     IniWrite(s, settingsIni, "Mic", "Excluded")
+    IniWrite(cfgKeyOn ? 1 : 0, settingsIni, "Keys", "ToggleOn")
+    IniWrite(cfgKey, settingsIni, "Keys", "Toggle")
 }
 
 SetupTray() {
     A_IconTip := "VoiceToApp - " APP_NAME
     A_TrayMenu.Add()
+    A_TrayMenu.Add("Cai dat...", (*) => ShowSettings())
     A_TrayMenu.Add("Hien nut mic noi", TrayToggleMic)
-    A_TrayMenu.Add("Cai dat nut mic...", (*) => ShowSettings())
-    A_TrayMenu.Default := "Cai dat nut mic..."
+    A_TrayMenu.Add("Dua cua so " APP_NAME " ve vi tri da luu", (*) => ArrangeNow())
+    A_TrayMenu.Add("Xem thong tin cua so duoi chuot (sau 3 giay)", (*) => WinInfoLater())
+    A_TrayMenu.Default := "Cai dat..."
     if cfgOn
         A_TrayMenu.Check("Hien nut mic noi")
 }
@@ -696,33 +790,74 @@ RunningApps() {
     return arr
 }
 
-ShowSettings() {
+ShowSettings(tabNo := 1) {
     global settingsGui
     if settingsGui {
         settingsGui.Show()
         return
     }
-    g := Gui("+AlwaysOnTop", "Cai dat nut mic - " APP_NAME)
+    ; Tam tat phim bat/tat ghi am de o chon phim tat nhan duoc chinh phim do (dang ky lai khi dong cua so)
+    if (activeKey != "") {
+        try Hotkey(activeKey, "Off")
+    }
+    g := Gui("+AlwaysOnTop", "Cai dat VoiceToApp - " APP_NAME)
     g.SetFont("s10")
     settingsGui := g
-    cbOn := g.Add("Checkbox", "xm w420", "Hien nut mic noi khi bam vao o nhap chu")
+    tabs := g.Add("Tab3", "w480 h520", ["Vi tri nut", "Phim tat", "Nut mic noi"])
+
+    ; ===== The 1: vi tri nut =====
+    g.Add("Text", "w450", "Cai MOT LAN, dung cho cac lan sau (khong can phim F9-F12). Truoc khi cai: mo " APP_NAME ", dat cua so dung vi tri va kich thuoc ban muon.")
+    g.Add("Text", "w450 y+8", "Bam 'Cai' -> cua so nay an, " APP_NAME " len tren cung -> re chuot len dung nut roi bam Enter (Esc de huy).")
+    g.Add("Text", "xm+12 y+18 w150", "Nut MIC (bat ghi am)")
+    stMic := g.Add("Text", "x+6 w160", CalibStatus("Mic"))
+    bMic := g.Add("Button", "x+6 w70", "Cai")
+    g.Add("Text", "xm+12 y+14 w150", "O NHAP CHU")
+    stIn := g.Add("Text", "x+6 w160", CalibStatus("Input"))
+    bIn := g.Add("Button", "x+6 w70", "Cai")
+    g.Add("Text", "xm+12 y+14 w150", "Nut DUNG (neu co)")
+    stStop := g.Add("Text", "x+6 w160", CalibStatus("Stop"))
+    bStop := g.Add("Button", "x+6 w70", "Cai")
+    g.Add("Text", "xm+12 y+8 w450", "Nut DUNG chi hien khi dang ghi am: hay bat ghi am o " APP_NAME " truoc roi bam Cai. Neu " APP_NAME " dung chinh nut Mic de dung thi bo qua.")
+    bClearStop := g.Add("Button", "xm+12 y+8 w190", "Xoa nut DUNG da cai")
+    bArr := g.Add("Button", "xm+12 y+22 w300", "Dua cua so " APP_NAME " ve vi tri da luu")
+    savedW := IniRead(ini, "B", "WinW", "")
+    savedH := IniRead(ini, "B", "WinH", "")
+    g.Add("Text", "xm+12 y+8 w450", "Cua so " APP_NAME " luc cai: " (savedW != "" ? savedW "x" savedH " px" : "chua cai") ". Doi kich thuoc cua so thi phai cai lai ca 3 vi tri.")
+
+    ; ===== The 2: phim tat =====
+    tabs.UseTab(2)
+    cbKey := g.Add("Checkbox", "w450", "Dung phim tat bat/tat ghi am")
+    cbKey.Value := cfgKeyOn ? 1 : 0
+    g.Add("Text", "xm+12 y+10 w200", "Phim tat (bam to hop phim):")
+    hkc := g.Add("Hotkey", "x+0 w200", cfgKey)
+    g.Add("Text", "xm+12 y+14 w450", "Bo tick neu chi muon dung nut mic noi (bam vao o nhap chu roi bam nut mic).")
+    g.Add("Text", "xm+12 y+8 w450", "Luu y Microsoft Word: F8 la mo rong vung chon; Ctrl+Shift+F8 la chon theo cot; Ctrl+Shift+F9, F11, F12 cung co lenh rieng. Dung Ctrl+Alt+phim chu cung co the trung. Neu hay bi xung dot, bo tick phim tat va dung nut mic.")
+    bInfo := g.Add("Button", "xm+12 y+20 w380", "Xem thong tin cua so duoi con tro (sau 3 giay)")
+    g.Add("Text", "xm+12 y+6 w450", "(Dung de lay ten tien trinh/tieu de, va xem ung dung co duoc nhan la o nhap chu khong.)")
+
+    ; ===== The 3: nut mic noi =====
+    tabs.UseTab(3)
+    cbOn := g.Add("Checkbox", "w450", "Hien nut mic noi khi bam vao o nhap chu")
     cbOn.Value := cfgOn ? 1 : 0
-    cbUia := g.Add("Checkbox", "xm w420", "Dung UI Automation de nhan biet o nhap (chinh xac hon; tat neu ung dung bi cham)")
+    cbUia := g.Add("Checkbox", "xm+12 y+8 w450", "Dung UI Automation de nhan biet o nhap (chinh xac hon; tat neu ung dung bi cham)")
     cbUia.Value := cfgUia ? 1 : 0
-    g.Add("Text", "xm y+12 w200", "Kich thuoc nut mic (16-80):")
+    g.Add("Text", "xm+12 y+12 w200", "Kich thuoc nut mic (16-80):")
     edSize := g.Add("Edit", "x+0 w70 Number", cfgSize)
-    g.Add("Text", "xm y+8 w200", "Chu ky nhap nhay (150-2000 ms):")
+    g.Add("Text", "xm+12 y+8 w200", "Chu ky nhap nhay (150-2000 ms):")
     edBlink := g.Add("Edit", "x+0 w70 Number", cfgBlink)
-    g.Add("Text", "xm y+14 w420", "Ung dung da co san nhan dien giong noi (khong hien nut mic khi bam vao o nhap cua chung):")
-    lb := g.Add("ListBox", "xm w420 r7")
+    g.Add("Text", "xm+12 y+12 w450", "Ung dung da co san nhan dien giong noi (khong hien nut mic khi bam vao o nhap cua chung):")
+    lb := g.Add("ListBox", "xm+12 w450 r6")
     for item in exclList
         lb.Add([item])
-    btnDel := g.Add("Button", "xm w150", "Xoa muc dang chon")
-    g.Add("Text", "xm y+12 w420", "Them ung dung (chon tu cac cua so dang mo, hoac go ten tien trinh, vi du zalo.exe):")
-    cb := g.Add("ComboBox", "xm w300", RunningApps())
-    btnAdd := g.Add("Button", "x+8 w110", "Them")
-    btnSave := g.Add("Button", "xm y+16 w120 Default", "Luu")
-    btnClose := g.Add("Button", "x+8 w120", "Dong")
+    bDel := g.Add("Button", "xm+12 w150", "Xoa muc dang chon")
+    g.Add("Text", "xm+12 y+8 w450", "Them ung dung (chon tu cac cua so dang mo, hoac go ten tien trinh, vi du zalo.exe):")
+    cb := g.Add("ComboBox", "xm+12 w320", RunningApps())
+    bAdd := g.Add("Button", "x+8 w110", "Them")
+
+    tabs.UseTab()
+    bSave := g.Add("Button", "xm y+14 w120 Default", "Luu")
+    bClose := g.Add("Button", "x+8 w120", "Dong")
+    tabs.Choose(tabNo)
 
     DelSel(*) {
         i := lb.Value
@@ -743,33 +878,67 @@ ShowSettings() {
         lb.Add([t])
         cb.Text := ""
     }
-    SaveAll(*) {
-        global cfgOn, cfgUia, cfgSize, cfgBlink, exclList
+    ; Doc cac o tren cua so vao cai dat va luu (khong dong cua so)
+    Collect(*) {
+        global cfgOn, cfgUia, cfgSize, cfgBlink, exclList, cfgKeyOn, cfgKey
         cfgOn := (cbOn.Value = 1)
         cfgUia := (cbUia.Value = 1)
         cfgSize := Max(16, Min(80, edSize.Value != "" ? Integer(edSize.Value) : MIC_SIZE))
         cfgBlink := Max(150, Min(2000, edBlink.Value != "" ? Integer(edBlink.Value) : MIC_BLINK_MS))
         exclList := ControlGetItems(lb)
+        cfgKeyOn := (cbKey.Value = 1)
+        cfgKey := hkc.Value
         SaveSettings()
         ApplyMicSettings()
-        CloseWin()
-        Tip("Da luu cai dat nut mic.", 2000)
     }
     CloseWin(*) {
         global settingsGui
         g.Destroy()
         settingsGui := 0
+        ApplyToggleKey()
     }
-    btnDel.OnEvent("Click", DelSel)
-    btnAdd.OnEvent("Click", AddApp)
-    btnSave.OnEvent("Click", SaveAll)
-    btnClose.OnEvent("Click", CloseWin)
+    SaveAll(*) {
+        Collect()
+        CloseWin()
+        Tip("Da luu cai dat.", 2000)
+    }
+    CalibBtn(name, *) {
+        Collect()
+        CloseWin()
+        StartCalib(name)
+    }
+    ClearStop(*) {
+        for ax in ["X", "Y"] {
+            try IniDelete(ini, "B", "Stop" ax)
+        }
+        stStop.Text := CalibStatus("Stop")
+    }
+    ArrBtn(*) {
+        Collect()
+        CloseWin()
+        ArrangeNow()
+    }
+    InfoBtn(*) {
+        Collect()
+        CloseWin()
+        WinInfoLater()
+    }
+    bMic.OnEvent("Click", CalibBtn.Bind("Mic"))
+    bIn.OnEvent("Click", CalibBtn.Bind("Input"))
+    bStop.OnEvent("Click", CalibBtn.Bind("Stop"))
+    bClearStop.OnEvent("Click", ClearStop)
+    bArr.OnEvent("Click", ArrBtn)
+    bInfo.OnEvent("Click", InfoBtn)
+    bDel.OnEvent("Click", DelSel)
+    bAdd.OnEvent("Click", AddApp)
+    bSave.OnEvent("Click", SaveAll)
+    bClose.OnEvent("Click", CloseWin)
     g.OnEvent("Close", CloseWin)
     g.OnEvent("Escape", CloseWin)
     g.Show()
 }
 
-; F8 hoac bam nut mic. Chong chay chong cheo khi bam lien tiep.
+; Phim tat hoac bam nut mic. Chong chay chong cheo khi bam lien tiep.
 ToggleVoice() {
     global toggling
     if toggling
@@ -787,7 +956,7 @@ ToggleCore() {
     t0 := A_TickCount
     bHwnd := FindB()
     if !bHwnd {
-        Tip("Khong tim thay cua so " APP_NAME ". Hay mo truoc (Ctrl+Shift+F12 de xem ten that).", 4000)
+        Tip("Khong tim thay cua so " APP_NAME ". Hay mo truoc (Cai dat > Phim tat > Xem thong tin cua so).", 4000)
         return
     }
     bProc := WinGetProcessName(bHwnd)
@@ -813,7 +982,7 @@ ToggleCore() {
         }
         recording := true
         PlayBeep(900)
-        ToolTip("Dang ghi am... bam F8 de dung", 20, 20)
+        ToolTip("Dang ghi am... bam lai nut mic (hoac phim tat) de dung", 20, 20)
         if RETURN_TO_A {
             Sleep BACK_DELAY
             BackToA()
@@ -826,7 +995,7 @@ ToggleCore() {
     ; ---------- DUNG VA CHUYEN CHU ----------
     ToolTip()
     if !ActivateWin(bHwnd) {
-        Tip("Khong dua duoc " APP_NAME " len tren cung. Mic van bat, bam F8 lai.", 4000)
+        Tip("Khong dua duoc " APP_NAME " len tren cung. Mic van bat, bam lai nut mic.", 4000)
         BackToA()
         return
     }
@@ -837,7 +1006,7 @@ ToggleCore() {
     Sleep FOCUS_DELAY
     stopName := (IniRead(ini, "B", "StopX", "") != "") ? "Stop" : "Mic"
     if !ClickBtn(bHwnd, stopName) {
-        Tip("Khong bam duoc nut dung. Mic co the van bat, bam F8 lai.", 4000)
+        Tip("Khong bam duoc nut dung. Mic co the van bat, bam lai nut mic.", 4000)
         BackToA()
         return
     }
