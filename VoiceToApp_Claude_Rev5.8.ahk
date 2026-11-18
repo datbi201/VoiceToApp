@@ -1,13 +1,14 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 ; ============================================================
-; VoiceToApp - Claude - Rev5.7
+; VoiceToApp - Claude - Rev5.8
 ; Ban o cua so A. Bam vao o nhap chu thi hien nut mic nho; bam nut mic (hoac phim tat
 ; bat/tat ghi am, mac dinh F8) de bat/dung mic cua Claude, chu duoc dan ve A.
 ; Chi dung toa do (khong nhan dien hinh anh) de chay nhanh.
 ;
 ; CAI DAT MOT LAN: bam chuot phai bieu tuong script o khay he thong -> "Cai dat..."
 ; -> the "Vi tri nut" (nut Mic, o nhap chu, nut Dung). Khong con dung F9/F10/F11/F12.
+; BAM TRAI MOT LAN vao bieu tuong script o khay he thong: TAM DUNG (bieu tuong DO), bam lan nua: TIEP TUC.
 ; Toa do + vi tri + kich thuoc cua so duoc luu vao
 ;   %LOCALAPPDATA%\VoiceToApp\Claude.ini
 ; nen khong mat khi tat may. Moi lan bat/dung mic, script tu dua
@@ -29,7 +30,7 @@ RETURN_TO_A := true            ; true: bat mic xong quay ve A ngay
 BEEP := false                  ; true: phat tieng bip (cao = bat dau ghi, thap = da dan xong)
 AUTO_LAYOUT := true            ; true: tu dua cua so ve vi tri/kich thuoc da luu
 ; Cac muc duoi day chi la GIA TRI MAC DINH. Doi bang cua so "Cai dat" (bam chuot phai
-; bieu tuong script o khay he thong). Bam trai de tam dung hoac tiep tuc. Cai dat luu o
+; bieu tuong script o khay he thong). Cai dat luu o
 ; %LOCALAPPDATA%\VoiceToApp\Settings.ini, dung chung cho ca 4 ban.
 HOTKEY_ON := true              ; true: dung phim tat bat/tat ghi am (false: chi dung nut mic noi)
 HOTKEY_TOGGLE := "F8"          ; phim tat bat/tat ghi am. Doi tu cua so Cai dat (neu Word xung dot, doi sang to hop khac hoac tat)
@@ -81,6 +82,12 @@ cfgKeyOn := HOTKEY_ON
 cfgKey := HOTKEY_TOGGLE
 activeKey := ""
 calibName := ""
+paused := false
+trayBusy := false
+lastTrayTick := 0
+trayRunName := ""
+iconRun := ""
+iconPaused := ""
 exclList := []
 LoadSettings()
 SetupTray()
@@ -444,11 +451,9 @@ OnAnyClick() {
 
 CheckClickedInput() {
     global recheck
-    if (A_IsSuspended || recording || toggling || !micGui)
-        return                           ; dang ghi am: giu nguyen nut de con bam dung
+    if (paused || recording || toggling || !micGui)
+        return                           ; dang tam dung / dang ghi am: giu nguyen
     ok := LooksLikeInput(clickX, clickY, &why)
-    if (A_IsSuspended || !micGui)
-        return                           ; co the da tam dung trong luc truy van UI Automation
     ; Chromium/Electron (Zalo, Teams...) dung cay truy cap cham sau cu bam dau: hoi lai mot lan
     if (!ok && recheck > 0 && InStr(lastFw, "Chrome")) {
         recheck := 0
@@ -610,7 +615,7 @@ ApplyToggleKey() {
         try Hotkey(activeKey, "Off")
         activeKey := ""
     }
-    if (cfgKeyOn && cfgKey != "") {
+    if (cfgKeyOn && cfgKey != "" && !paused) {
         try {
             Hotkey(cfgKey, KeyToggle, "On")
             activeKey := cfgKey
@@ -745,37 +750,185 @@ SaveSettings() {
 }
 
 SetupTray() {
-    A_IconTip := "VoiceToApp - " APP_NAME " - Đang chạy"
-    A_TrayMenu.Delete("&Suspend Hotkeys")
-    A_TrayMenu.Delete("&Pause Script")
+    global trayRunName, iconRun, iconPaused
+    for nm in ["&Suspend Hotkeys", "&Pause Script"] {
+        try A_TrayMenu.Delete(nm)
+    }
     A_TrayMenu.Add()
-    A_TrayMenu.Add("Tạm dừng", TrayToggleRun)
-    A_TrayMenu.Default := "Tạm dừng"
-    A_TrayMenu.ClickCount := 1
+    trayRunName := "Tam dung (bam trai bieu tuong)"
+    A_TrayMenu.Add(trayRunName, (*) => TrayToggleRun())
+    A_TrayMenu.Default := trayRunName
     A_TrayMenu.Add("Cai dat...", (*) => ShowSettings())
     A_TrayMenu.Add("Hien nut mic noi", TrayToggleMic)
     A_TrayMenu.Add("Dua cua so " APP_NAME " ve vi tri da luu", (*) => ArrangeNow())
     A_TrayMenu.Add("Xem thong tin cua so duoi chuot (sau 3 giay)", (*) => WinInfoLater())
     if cfgOn
         A_TrayMenu.Check("Hien nut mic noi")
+    ; Bieu tuong khay: xanh = dang chay, do = dang tam dung (ve san thanh file .ico)
+    iconRun := dataDir "\tray_5.8_run.ico"
+    iconPaused := dataDir "\tray_5.8_paused.ico"
+    try {
+        BuildTrayIcon(iconRun, 43, 108, 176)
+        BuildTrayIcon(iconPaused, 229, 57, 53)
+    } catch as e {
+        iconRun := ""
+        iconPaused := ""
+        WriteLog("Khong ve duoc bieu tuong khay: " e.Message)
+    }
+    OnMessage(0x404, TrayNotify)         ; AHK_NOTIFYICON: bam chuot vao bieu tuong khay
+    SetTrayState()
 }
 
-TrayToggleRun(itemName, *) {
-    Critical
-    if (recording || toggling) {
-        Tip(recording ? "Hãy kết thúc lượt ghi âm trước khi tạm dừng VoiceToApp."
-            : "VoiceToApp đang xử lý. Hãy bấm lại khi thao tác hoàn tất.")
+; Bam TRAI mot lan vao bieu tuong khay = tam dung / tiep tuc. Chuot phai van mo menu.
+; Bam doi chi tinh mot lan (chong tam dung roi tiep tuc ngay).
+TrayNotify(wParam, lParam, msg, hwnd) {
+    global lastTrayTick
+    if (lParam = 0x202) {                ; WM_LBUTTONUP
+        if (A_TickCount - lastTrayTick > 500) {
+            lastTrayTick := A_TickCount
+            SetTimer(TrayToggleRun, -10) ; chay ngoai luong thong bao
+        }
+        return 0
+    }
+    if (lParam = 0x203)                  ; WM_LBUTTONDBLCLK: nuot, khong mo gi ca
+        return 0
+}
+
+TrayToggleRun(*) {
+    global paused, trayBusy
+    if (trayBusy || toggling) {
+        Tip("VoiceToApp dang xu ly, hay bam lai sau it giay.", 2500)
         return
     }
     if (calibName != "") {
-        Tip("Hãy lưu hoặc hủy cài vị trí nút trước khi tạm dừng VoiceToApp.")
+        Tip("Hay bam Enter hoac Esc de ket thuc cai vi tri nut truoc.", 3000)
         return
     }
-    Suspend(-1)
-    SetTimer(CheckClickedInput, 0)
+    trayBusy := true
+    try {
+        if !paused {
+            if recording {
+                ; Dang ghi am: ket thuc luot nay binh thuong (dung mic, dan chu ve A) roi moi tam dung
+                ToggleVoice()
+                if recording {
+                    Tip("Chua dung duoc ghi am, nen chua tam dung. Thu lai.", 3500)
+                    return
+                }
+            }
+            paused := true
+        } else {
+            paused := false
+        }
+        ApplyPausedState()
+        WriteLog(paused ? "TAM DUNG qua bieu tuong khay" : "TIEP TUC qua bieu tuong khay")
+        Tip(paused ? "DA TAM DUNG VoiceToApp (bieu tuong do). Bam trai bieu tuong khay de tiep tuc."
+            : "DA TIEP TUC VoiceToApp.", 3000)
+    } finally {
+        trayBusy := false
+    }
+}
+
+; Tam dung: nha phim tat, an va huy nut mic noi, doi bieu tuong khay. Tiep tuc: nguoc lai.
+ApplyPausedState() {
+    ApplyToggleKey()
     ApplyMicSettings()
-    A_TrayMenu.Rename(itemName, A_IsSuspended ? "Tiếp tục" : "Tạm dừng")
-    A_IconTip := "VoiceToApp - " APP_NAME (A_IsSuspended ? " - Đang tạm dừng" : " - Đang chạy")
+    SetTrayState()
+}
+
+SetTrayState() {
+    global trayRunName
+    newName := paused ? "Tiep tuc (bam trai bieu tuong)" : "Tam dung (bam trai bieu tuong)"
+    if (newName != trayRunName) {
+        try {
+            A_TrayMenu.Rename(trayRunName, newName)
+            trayRunName := newName
+            A_TrayMenu.Default := newName
+        }
+    }
+    A_IconTip := "VoiceToApp - " APP_NAME (paused ? " - DANG TAM DUNG (bam trai de tiep tuc)" : " - dang chay (bam trai de tam dung)")
+    ico := paused ? iconPaused : iconRun
+    if (ico != "") {
+        try TraySetIcon(ico)
+    }
+}
+
+; Ve bieu tuong khay: hinh tron mau (cr, cg, cb) co hinh mic trang, ghi thanh .ico gom 3 kich thuoc
+BuildTrayIcon(path, cr, cg, cb) {
+    sizes := [16, 32, 48]
+    imgs := []
+    total := 6 + 16 * sizes.Length
+    for sz in sizes {
+        img := IconImage(sz, cr, cg, cb)
+        imgs.Push(img)
+        total += img.Size
+    }
+    buf := Buffer(total, 0)
+    NumPut("ushort", 0, "ushort", 1, "ushort", sizes.Length, buf, 0)
+    off := 6 + 16 * sizes.Length
+    for i, sz in sizes {
+        ent := 6 + 16 * (i - 1)
+        NumPut("uchar", sz, "uchar", sz, "uchar", 0, "uchar", 0, "ushort", 1, "ushort", 32, "uint", imgs[i].Size, "uint", off, buf, ent)
+        DllCall("RtlMoveMemory", "ptr", buf.Ptr + off, "ptr", imgs[i].Ptr, "uptr", imgs[i].Size)
+        off += imgs[i].Size
+    }
+    fh := FileOpen(path, "w")
+    fh.RawWrite(buf, buf.Size)
+    fh.Close()
+}
+
+; Mot anh trong file .ico: BITMAPINFOHEADER + diem anh BGRA (hang di tu duoi len) + mat na AND
+IconImage(sz, cr, cg, cb) {
+    maskRow := ((sz + 31) // 32) * 4
+    pixBytes := sz * sz * 4
+    img := Buffer(40 + pixBytes + maskRow * sz, 0)
+    NumPut("uint", 40, "int", sz, "int", sz * 2, "ushort", 1, "ushort", 32, "uint", 0, "uint", pixBytes + maskRow * sz, img, 0)
+    ss := 4
+    Loop sz {
+        py := A_Index - 1
+        row := sz - 1 - py
+        Loop sz {
+            px := A_Index - 1
+            inC := 0
+            inG := 0
+            Loop ss {
+                sy := A_Index - 1
+                Loop ss {
+                    sx := A_Index - 1
+                    u := ((px + (sx + 0.5) / ss) / sz) * 2 - 1
+                    v := ((py + (sy + 0.5) / ss) / sz) * 2 - 1
+                    if (u * u + v * v <= 0.9025) {
+                        inC += 1
+                        if MicGlyph(u, v)
+                            inG += 1
+                    }
+                }
+            }
+            if (inC = 0)
+                continue
+            gf := inG / inC
+            o := 40 + (row * sz + px) * 4
+            NumPut("uchar", Round(cb * (1 - gf) + 255 * gf), "uchar", Round(cg * (1 - gf) + 255 * gf), "uchar", Round(cr * (1 - gf) + 255 * gf), "uchar", Round(255 * inC / (ss * ss)), img, o)
+        }
+    }
+    return img
+}
+
+; Hinh mic trong toa do [-1,1]: than (vien thuoc), ranh cua chu U, chan, de
+MicGlyph(u, v) {
+    if (Abs(u) <= 0.2 && v >= -0.38 && v <= -0.02)
+        return true
+    if (u * u + (v + 0.38) * (v + 0.38) <= 0.04)
+        return true
+    if (u * u + (v + 0.02) * (v + 0.02) <= 0.04)
+        return true
+    d := Sqrt(u * u + (v + 0.02) * (v + 0.02))
+    if (v >= -0.02 && d >= 0.33 && d <= 0.42)
+        return true
+    if (Abs(u) <= 0.04 && v >= 0.38 && v <= 0.58)
+        return true
+    if (Abs(u) <= 0.22 && v >= 0.55 && v <= 0.64)
+        return true
+    return false
 }
 
 TrayToggleMic(*) {
@@ -789,7 +942,7 @@ TrayToggleMic(*) {
 ApplyMicSettings() {
     MicDestroy()
     if cfgOn {
-        if !A_IsSuspended
+        if !paused
             MicInit()
         A_TrayMenu.Check("Hien nut mic noi")
     } else {
@@ -856,6 +1009,7 @@ ShowSettings(tabNo := 1) {
     g.Add("Text", "xm+12 y+10 w200", "Phim tat (bam to hop phim):")
     hkc := g.Add("Hotkey", "x+0 w200", cfgKey)
     g.Add("Text", "xm+12 y+14 w450", "Bo tick neu chi muon dung nut mic noi (bam vao o nhap chu roi bam nut mic).")
+    g.Add("Text", "xm+12 y+8 w450", "Bam TRAI mot lan vao bieu tuong script o khay he thong de TAM DUNG (bieu tuong chuyen DO, phim tat va nut mic noi tat), bam lan nua de TIEP TUC. Chuot phai mo menu.")
     g.Add("Text", "xm+12 y+8 w450", "Luu y Microsoft Word: F8 la mo rong vung chon; Ctrl+Shift+F8 la chon theo cot; Ctrl+Shift+F9, F11, F12 cung co lenh rieng. Dung Ctrl+Alt+phim chu cung co the trung. Neu hay bi xung dot, bo tick phim tat va dung nut mic.")
     bInfo := g.Add("Button", "xm+12 y+20 w380", "Xem thong tin cua so duoi con tro (sau 3 giay)")
     g.Add("Text", "xm+12 y+6 w450", "(Dung de lay ten tien trinh/tieu de, va xem ung dung co duoc nhan la o nhap chu khong.)")
@@ -928,10 +1082,6 @@ ShowSettings(tabNo := 1) {
         Tip("Da luu cai dat.", 2000)
     }
     CalibBtn(name, *) {
-        if A_IsSuspended {
-            Tip("Hãy tiếp tục VoiceToApp trước khi cài vị trí nút.")
-            return
-        }
         Collect()
         CloseWin()
         StartCalib(name)
@@ -970,7 +1120,11 @@ ShowSettings(tabNo := 1) {
 ; Phim tat hoac bam nut mic. Chong chay chong cheo khi bam lien tiep.
 ToggleVoice() {
     global toggling
-    if (A_IsSuspended || toggling)
+    if paused {
+        Tip("VoiceToApp dang tam dung. Bam trai bieu tuong khay de tiep tuc.", 3000)
+        return
+    }
+    if toggling
         return
     toggling := true
     try {

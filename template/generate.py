@@ -14,7 +14,7 @@ import pathlib
 import re
 import sys
 
-REV = "5.7"
+REV = "5.8"
 
 # Ten ban -> danh sach mau cua so can tim (AutoHotkey WinTitle, khop theo thu tu)
 APPS = {

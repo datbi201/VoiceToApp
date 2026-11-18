@@ -3,12 +3,13 @@
 Cập nhật: 18/11/2026
 
 ## Trạng thái hiện tại
-- **Rev mới nhất: 5.7**, bốn file: `VoiceToApp_Claude_Rev5.7.ahk`, `VoiceToApp_Agy_Rev5.7.ahk`, `VoiceToApp_Gemini_Rev5.7.ahk`, `VoiceToApp_GPT_Rev5.7.ahk`. Bốn launcher ở thư mục gốc mở Rev5.7.
-- Rev5.7: bấm trái một lần vào biểu tượng khay để tạm dừng hoặc tiếp tục. Khi tạm dừng, phím tắt ghi âm được nhả và nút mic nổi ẩn đi. Bấm chuột phải để mở Cài đặt. Kết thúc lượt ghi âm hoặc thao tác cài vị trí đang mở trước khi tạm dừng.
-- Kiểm tra Rev5.7 trên AutoHotkey v2.0.31: cả bốn bản qua kiểm tra cú pháp. Bản Agy thử với cấu hình riêng và tín hiệu bấm trái của khay Windows: nút mic được ẩn và phục hồi theo cài đặt, phím tắt được nhả và đăng ký lại, tên lệnh và trạng thái trên biểu tượng đổi đúng, và lượt ghi âm hoặc thao tác đang thực hiện được giữ. Chưa thử bằng chuột thật hoặc chạy lại luồng ghi âm và dán chữ với ứng dụng AI.
+- **Rev mới nhất: 5.7**, bốn file: `VoiceToApp_Claude_Rev5.8.ahk`, `VoiceToApp_Agy_Rev5.8.ahk`, `VoiceToApp_Gemini_Rev5.8.ahk`, `VoiceToApp_GPT_Rev5.8.ahk`. Bốn launcher ở thư mục gốc mở Rev5.8.
+- Rev5.8 (làm lại tính năng tạm dừng của Rev5.7 từ nền Rev5.6): bấm trái một lần vào biểu tượng khay = tạm dừng, biểu tượng đỏ; bấm lần nữa = tiếp tục, biểu tượng xanh. Dùng biến `paused` riêng, **không** dùng `Suspend` hay `ClickCount` như Rev5.7. Bắt thẳng thông báo của biểu tượng khay (`OnMessage(0x404)`: bấm trái nhả = đổi trạng thái, bấm đúp nuốt, chống bấm trong 500 ms). Biểu tượng khay tự vẽ thành `%LOCALAPPDATA%\VoiceToApp\tray_<Rev>_run.ico` và `_paused.ico`. Đang ghi âm mà bấm khay thì kết thúc lượt ghi (dán chữ về A) rồi mới tạm dừng; nếu không dừng được thì không tạm dừng.
+- Rev5.7 (do agy làm, dùng `Suspend`) bị người dùng báo hoạt động không ổn định (clip SnowShot 18/11), đã thay bằng Rev5.8. Rev5.7 nằm ở `03_ONEDRIVE_BACKUP\revisions`.
+- Kiểm tra Rev5.8 trên AutoHotkey v2.0.31: cả bốn bản nạp không lỗi. Bản Claude chạy bài thử có mô phỏng thông báo bấm khay (bấm trái, bấm liền trong 500 ms, bấm đúp, đang ghi âm, đang xử lý, bật/tắt nút mic trong lúc tạm dừng): trạng thái, phím tắt, nút mic, tên menu, tooltip đổi đúng. Biểu tượng khay đã vẽ ra và xem được (xanh, đỏ). **Chưa thử bằng chuột thật vào biểu tượng khay** (máy thử bị khoá màn hình hoặc người dùng đang làm việc) và chưa xem được clip lỗi của Rev5.7.
 - Rev5.6 bỏ F9-F12 cố định, cài vị trí nút qua cửa sổ Cài đặt và cho phép đổi hoặc tắt phím ghi âm. Nút mic nổi xuất hiện cạnh ô nhập chữ và nhấp nháy đỏ khi ghi âm.
 - Điểm mới của dòng Rev5.2 trở đi: lưu vị trí, kích thước cửa sổ B, tự đưa về đúng chỗ mỗi lần bật/dừng ghi âm.
-- Rev cũ nằm ở `03_ONEDRIVE_BACKUP\revisions` (gồm Rev5.1 đến 5.6).
+- Rev cũ nằm ở `03_ONEDRIVE_BACKUP\revisions` (gồm Rev5.1 đến 5.7).
 - Mẫu chung và script sinh file nằm ở `template\`. Sửa mẫu, rồi chạy `python template\generate.py`. Script này tự kiểm tra trùng tên hàm và biến.
 - Commit: bấm đúp `commit_rev.bat` ở thư mục gốc dự án (ngoài repo). Danh tính: `datbi201`, email noreply có mã số.
 

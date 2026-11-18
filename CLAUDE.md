@@ -11,7 +11,7 @@ Script AutoHotkey v2 cho Windows. Người dùng ở lại phần mềm A (Zalo,
 - Toạ độ nút và nhật ký của từng máy nằm ở `%LOCALAPPDATA%\VoiceToApp\` (file `.ini`, `.log`). Không đưa lên git.
 
 ## Quy tắc đánh số Rev
-- Hiện tại là **Rev5.7**. Mỗi lần sửa tăng một bậc: 5.2, 5.3, 5.4...
+- Hiện tại là **Rev5.8**. Mỗi lần sửa tăng một bậc: 5.2, 5.3, 5.4...
 - Chỉ lên **6.0** khi người dùng nói rõ "lên 6.0".
 - Bốn bản luôn cùng số Rev, luôn sửa cùng lúc. Chỉ khác hai dòng cấu hình: `APP_NAME` và danh sách cửa sổ cần tìm `B_CANDIDATES`.
 - Tên file: `VoiceToApp_<Claude|Agy|Gemini|GPT>_Rev<số>.ahk`. Dòng đầu phần chú thích trong file ghi đúng số Rev.
@@ -36,6 +36,7 @@ Script AutoHotkey v2 cho Windows. Người dùng ở lại phần mềm A (Zalo,
 - Tiếng bip tắt mặc định (`BEEP := false`). Hàm phát bip tên `PlayBeep`, hàm ghi nhật ký tên `WriteLog`. AutoHotkey v2 không cho tên biến trùng tên hàm (không phân biệt hoa thường, kể cả hàm dựng sẵn như `Log`). Lỗi này chỉ lộ khi chạy trên Windows (Rev5.2 hỏng vì hàm `Beep` trùng biến `BEEP`). Vì vậy `template\generate.py` tự kiểm tra trùng tên trước khi ghi file. Không bỏ bước này, và khi thêm hàm hoặc biến mới thì đặt tên không trùng nhau.
 - Rev5.4: nút mic nổi (`MicInit`, `MicShowAt`, `MicTick`, `LooksLikeInput`, `UiaProbe`). Nút là cửa sổ AutoHotkey `WS_EX_NOACTIVATE` nên không cướp focus của A; bấm nút gọi lại `ToggleVoice()` như phím bật/tắt ghi âm. Hook chuột `~LButton` chỉ kiểm tra rồi hiện hoặc ẩn nút, không chặn chuột. Chỉ số hàm UIA (vtable) ghi chú ngay trên `UiaProbe`; đừng đổi nếu chưa thử. Rev5.5: `ClassifyInput` theo quy tắc của AI_Voice_Typer_Rev2_9 (Edit/ComboBox, ARIA textbox, Document ghi được, Group/Custom/Pane ghi được) để nhận ô chat Chromium/Electron như Zalo; cài đặt nút mic và danh sách ứng dụng loại trừ lưu ở `Settings.ini` (chung cho 4 bản), sửa qua cửa sổ mở từ menu khay. `ToggleVoice` giờ là lớp bọc có cờ `toggling` quanh `ToggleCore` để F8 và nút mic không chạy chồng.
 - Rev5.6: bỏ phím cố định F9 đến F12 (xung đột Word). Cài nút Mic, ô nhập, nút Dừng qua cửa sổ Cài đặt (`ShowSettings`, `StartCalib`: tạm đăng ký Enter, NumpadEnter, Escape bằng `Hotkey()` để lấy vị trí con trỏ, xong thì tắt). Phím bật/tắt ghi âm đăng ký động bằng `ApplyToggleKey` (mặc định F8, đổi hoặc tắt trong Cài đặt, lưu ở `Settings.ini` mục `[Keys]`). Mở cửa sổ Cài đặt thì tạm tắt phím này để ô chọn phím bắt được phím. Không thêm lại phím cố định nếu chưa hỏi.
+- Rev5.8: tạm dừng/tiếp tục bằng bấm trái biểu tượng khay. Đừng dùng `Suspend` hoặc `A_TrayMenu.ClickCount` (Rev5.7 làm vậy và bị báo không ổn định). Dùng `paused`, `OnMessage(0x404, TrayNotify)`, `ApplyPausedState`, `SetTrayState`. Biểu tượng khay vẽ bằng `BuildTrayIcon`.
 
 ## Môi trường thử
 - Máy công ty: hai màn hình, màn 1 là 3440×1440 ở 100%, màn 2 là 2160×1440 ở 125%. Phải thử cả khi B nằm ở màn 2.
@@ -59,3 +60,4 @@ Script AutoHotkey v2 cho Windows. Người dùng ở lại phần mềm A (Zalo,
 - Có shell trong kho (ví dụ Claude Code): làm đủ quy trình ở trên, rồi `git add -A`, commit và `git push origin master`. Danh tính chỉ đặt trong repo (không dùng `--global`): tên `datbi201`, email `343996192+datbi201@users.noreply.github.com` (địa chỉ noreply có mã số của tài khoản GitHub, giống commit đầu tiên của kho). Cuối commit ghi `Co-Authored-By` của Claude và dòng `Claude-Session`.
 - Không có shell (chat Claude, chỉ ghi được file): ghi `commit_message.txt` vào thư mục gốc dự án (cạnh `commit_rev.bat`, ngoài repo). Dòng đầu là `Rev<số>: <tóm tắt>`, cuối file có hai dòng trailer. Rồi nhắc người dùng bấm đúp `commit_rev.bat`. Script này tự đặt danh tính, tự xoá các Rev cũ trong repo nếu đã có bản sao lưu giống hệt ở `03_ONEDRIVE_BACKUP\revisions` (nên phải ghi bản sao lưu trước), `git add -A`, commit bằng `commit_message.txt`, rồi push.
 - Không dùng `--force`. Nếu commit hoặc push lỗi thì báo người dùng, không tự xử lý bằng cách ép.
+

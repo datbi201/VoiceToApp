@@ -9,9 +9,9 @@ Script AutoHotkey v2 cho Windows. Bạn nói bằng giọng nói ở ứng dụn
 
 ## Tạm dừng và tiếp tục
 
-Bấm trái **một lần** vào biểu tượng VoiceToApp ở khay hệ thống (cạnh đồng hồ) để tạm dừng. Nút mic nổi sẽ ẩn, phím tắt ghi âm được nhả về cho ứng dụng đang dùng. Bấm trái lần nữa để tiếp tục. Rê chuột lên biểu tượng để xem trạng thái **Đang chạy** hoặc **Đang tạm dừng**.
+Bấm trái **một lần** vào biểu tượng VoiceToApp ở khay hệ thống (cạnh đồng hồ) để **tạm dừng**: biểu tượng chuyển **màu đỏ**, nút mic nổi ẩn đi, phím tắt ghi âm được nhả về cho ứng dụng đang dùng. Bấm trái lần nữa để **tiếp tục**: biểu tượng về màu xanh. Rê chuột lên biểu tượng để xem trạng thái. Bấm chuột phải để mở menu (Tạm dừng/Tiếp tục, Cài đặt...). Bấm đúp nhanh chỉ tính một lần.
 
-Nếu đang ghi âm, hãy kết thúc lượt ghi trước khi tạm dừng. Khi đang cài vị trí nút, hãy lưu hoặc hủy thao tác trước.
+Nếu đang ghi âm mà bạn bấm biểu tượng để tạm dừng, lượt ghi âm được kết thúc bình thường trước (dừng mic, dán chữ về cửa sổ của bạn) rồi mới tạm dừng. Khi đang cài vị trí nút, hãy bấm Enter hoặc Esc trước.
 
 ## Cửa sổ Cài đặt
 Bấm chuột phải vào biểu tượng VoiceToApp ở khay hệ thống và chọn **Cai dat...**. Có ba thẻ:
@@ -34,10 +34,10 @@ Chỉ chạy một bản mỗi lúc, vì các bản dùng chung phím tắt bậ
 
 ## Các file
 ```
-├── VoiceToApp_Claude_Rev5.7.ahk   # Claude Desktop
-├── VoiceToApp_Agy_Rev5.7.ahk      # Antigravity
-├── VoiceToApp_Gemini_Rev5.7.ahk   # Gemini (trong trình duyệt)
-├── VoiceToApp_GPT_Rev5.7.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
+├── VoiceToApp_Claude_Rev5.8.ahk   # Claude Desktop
+├── VoiceToApp_Agy_Rev5.8.ahk      # Antigravity
+├── VoiceToApp_Gemini_Rev5.8.ahk   # Gemini (trong trình duyệt)
+├── VoiceToApp_GPT_Rev5.8.ahk      # ChatGPT (ứng dụng hoặc trình duyệt)
 ├── template/                      # Mẫu chung và script sinh 4 bản
 ├── CLAUDE.md                      # Quy tắc dự án (cho Claude Code)
 ├── BAN-GIAO.md                    # Trạng thái và việc đang chờ
