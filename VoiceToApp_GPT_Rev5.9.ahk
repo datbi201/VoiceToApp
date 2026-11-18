@@ -1,18 +1,18 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 ; ============================================================
-; VoiceToApp - Agy - Rev5.8
+; VoiceToApp - GPT - Rev5.9
 ; Ban o cua so A. Bam vao o nhap chu thi hien nut mic nho; bam nut mic (hoac phim tat
-; bat/tat ghi am, mac dinh F8) de bat/dung mic cua Agy, chu duoc dan ve A.
+; bat/tat ghi am, mac dinh F8) de bat/dung mic cua GPT, chu duoc dan ve A.
 ; Chi dung toa do (khong nhan dien hinh anh) de chay nhanh.
 ;
 ; CAI DAT MOT LAN: bam chuot phai bieu tuong script o khay he thong -> "Cai dat..."
 ; -> the "Vi tri nut" (nut Mic, o nhap chu, nut Dung). Khong con dung F9/F10/F11/F12.
 ; BAM TRAI MOT LAN vao bieu tuong script o khay he thong: TAM DUNG (bieu tuong DO), bam lan nua: TIEP TUC.
 ; Toa do + vi tri + kich thuoc cua so duoc luu vao
-;   %LOCALAPPDATA%\VoiceToApp\Agy.ini
+;   %LOCALAPPDATA%\VoiceToApp\GPT.ini
 ; nen khong mat khi tat may. Moi lan bat/dung mic, script tu dua
-; cua so Agy ve dung vi tri/kich thuoc da luu.
+; cua so GPT ve dung vi tri/kich thuoc da luu.
 ; Chi can cai lai khi ban chu dong doi vi tri/kich thuoc cua so.
 ; ============================================================
 CoordMode "Mouse", "Screen"
@@ -23,9 +23,9 @@ SetMouseDelay 0
 SetKeyDelay 0
 
 ; ===== CAU HINH =====
-APP_NAME := "Agy"
+APP_NAME := "GPT"
 ; Cac mau cua so can tim, thu lan luot. Xem ten tien trinh/tieu de that: Cai dat -> Phim tat -> Xem thong tin cua so.
-B_CANDIDATES := ["ahk_exe Antigravity.exe"]
+B_CANDIDATES := ["ahk_exe ChatGPT.exe", "ChatGPT ahk_exe chrome.exe", "ChatGPT ahk_exe msedge.exe", "ChatGPT ahk_exe firefox.exe"]
 RETURN_TO_A := true            ; true: bat mic xong quay ve A ngay
 BEEP := false                  ; true: phat tieng bip (cao = bat dau ghi, thap = da dan xong)
 AUTO_LAYOUT := true            ; true: tu dua cua so ve vi tri/kich thuoc da luu
@@ -443,8 +443,8 @@ OnAnyClick() {
     if (!cfgOn || !micGui)
         return
     MouseGetPos(&clickX, &clickY, &clickWin)
-    if (clickWin = micGui.Hwnd)
-        return                           ; bam vao chinh nut mic: de MicClicked xu ly
+    if IsOwnWindow(clickWin)
+        return                           ; bam vao nut mic hoac cua so Cai dat cua chinh script: khong hoi UI Automation
     recheck := 1
     SetTimer(CheckClickedInput, -140)    ; cho focus on dinh roi moi kiem tra
 }
@@ -453,6 +453,8 @@ CheckClickedInput() {
     global recheck
     if (paused || recording || toggling || !micGui)
         return                           ; dang tam dung / dang ghi am: giu nguyen
+    if (settingsGui || calibName != "")
+        return                           ; dang mo Cai dat / dang cai vi tri: khong kiem tra o nhap
     ok := LooksLikeInput(clickX, clickY, &why)
     ; Chromium/Electron (Zalo, Teams...) dung cay truy cap cham sau cu bam dau: hoi lai mot lan
     if (!ok && recheck > 0 && InStr(lastFw, "Chrome")) {
@@ -468,6 +470,16 @@ CheckClickedInput() {
         MicHide()
 }
 
+; Cua so nay thuoc chinh tien trinh script nay (nut mic, cua so Cai dat, tooltip, menu khay) khong
+IsOwnWindow(hwnd) {
+    if !hwnd
+        return false
+    try {
+        return (WinGetPID(hwnd) = ProcessExist())
+    }
+    return false
+}
+
 ; Nhan biet focus hien tai co phai o nhap chu khong. why = ly do (de xem trong nhat ky).
 LooksLikeInput(x, y, &why) {
     global lastFw
@@ -478,8 +490,10 @@ LooksLikeInput(x, y, &why) {
         why := "khong co cua so active"
         return false
     }
-    if (micGui && hwndA = micGui.Hwnd) {
-        why := "cua so mic"
+    ; Khong bao gio hoi UI Automation ve cua so cua chinh script (nut mic, Cai dat): UIA se goi nguoc
+    ; vao luong dang cho no, de gay loi "Invalid memory read/write" khi cua so vua bi huy
+    if IsOwnWindow(hwndA) {
+        why := "cua so cua chinh VoiceToApp"
         return false
     }
     pn := ""
@@ -627,7 +641,7 @@ ApplyToggleKey() {
 }
 
 ; ---------- CAI VI TRI NUT (khong can phim F9/F10/F11) ----------
-; Bam "Cai" trong cua so Cai dat -> cua so an, Agy len tren cung -> re chuot len nut roi bam Enter.
+; Bam "Cai" trong cua so Cai dat -> cua so an, GPT len tren cung -> re chuot len nut roi bam Enter.
 ; Enter/Esc chi bi chiem trong luc dang cai (toi da 90 giay).
 
 CalibLabel(name) {
@@ -765,8 +779,8 @@ SetupTray() {
     if cfgOn
         A_TrayMenu.Check("Hien nut mic noi")
     ; Bieu tuong khay: xanh = dang chay, do = dang tam dung (ve san thanh file .ico)
-    iconRun := dataDir "\tray_5.8_run.ico"
-    iconPaused := dataDir "\tray_5.8_paused.ico"
+    iconRun := dataDir "\tray_5.9_run.ico"
+    iconPaused := dataDir "\tray_5.9_paused.ico"
     try {
         BuildTrayIcon(iconRun, 43, 108, 176)
         BuildTrayIcon(iconPaused, 229, 57, 53)

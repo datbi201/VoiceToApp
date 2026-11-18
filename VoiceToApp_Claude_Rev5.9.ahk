@@ -1,7 +1,7 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 ; ============================================================
-; VoiceToApp - Claude - Rev5.8
+; VoiceToApp - Claude - Rev5.9
 ; Ban o cua so A. Bam vao o nhap chu thi hien nut mic nho; bam nut mic (hoac phim tat
 ; bat/tat ghi am, mac dinh F8) de bat/dung mic cua Claude, chu duoc dan ve A.
 ; Chi dung toa do (khong nhan dien hinh anh) de chay nhanh.
@@ -443,8 +443,8 @@ OnAnyClick() {
     if (!cfgOn || !micGui)
         return
     MouseGetPos(&clickX, &clickY, &clickWin)
-    if (clickWin = micGui.Hwnd)
-        return                           ; bam vao chinh nut mic: de MicClicked xu ly
+    if IsOwnWindow(clickWin)
+        return                           ; bam vao nut mic hoac cua so Cai dat cua chinh script: khong hoi UI Automation
     recheck := 1
     SetTimer(CheckClickedInput, -140)    ; cho focus on dinh roi moi kiem tra
 }
@@ -453,6 +453,8 @@ CheckClickedInput() {
     global recheck
     if (paused || recording || toggling || !micGui)
         return                           ; dang tam dung / dang ghi am: giu nguyen
+    if (settingsGui || calibName != "")
+        return                           ; dang mo Cai dat / dang cai vi tri: khong kiem tra o nhap
     ok := LooksLikeInput(clickX, clickY, &why)
     ; Chromium/Electron (Zalo, Teams...) dung cay truy cap cham sau cu bam dau: hoi lai mot lan
     if (!ok && recheck > 0 && InStr(lastFw, "Chrome")) {
@@ -468,6 +470,16 @@ CheckClickedInput() {
         MicHide()
 }
 
+; Cua so nay thuoc chinh tien trinh script nay (nut mic, cua so Cai dat, tooltip, menu khay) khong
+IsOwnWindow(hwnd) {
+    if !hwnd
+        return false
+    try {
+        return (WinGetPID(hwnd) = ProcessExist())
+    }
+    return false
+}
+
 ; Nhan biet focus hien tai co phai o nhap chu khong. why = ly do (de xem trong nhat ky).
 LooksLikeInput(x, y, &why) {
     global lastFw
@@ -478,8 +490,10 @@ LooksLikeInput(x, y, &why) {
         why := "khong co cua so active"
         return false
     }
-    if (micGui && hwndA = micGui.Hwnd) {
-        why := "cua so mic"
+    ; Khong bao gio hoi UI Automation ve cua so cua chinh script (nut mic, Cai dat): UIA se goi nguoc
+    ; vao luong dang cho no, de gay loi "Invalid memory read/write" khi cua so vua bi huy
+    if IsOwnWindow(hwndA) {
+        why := "cua so cua chinh VoiceToApp"
         return false
     }
     pn := ""
@@ -765,8 +779,8 @@ SetupTray() {
     if cfgOn
         A_TrayMenu.Check("Hien nut mic noi")
     ; Bieu tuong khay: xanh = dang chay, do = dang tam dung (ve san thanh file .ico)
-    iconRun := dataDir "\tray_5.8_run.ico"
-    iconPaused := dataDir "\tray_5.8_paused.ico"
+    iconRun := dataDir "\tray_5.9_run.ico"
+    iconPaused := dataDir "\tray_5.9_paused.ico"
     try {
         BuildTrayIcon(iconRun, 43, 108, 176)
         BuildTrayIcon(iconPaused, 229, 57, 53)
