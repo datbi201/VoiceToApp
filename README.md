@@ -1,5 +1,7 @@
 # VoiceToApp
 
+**Tiếng Việt** | [English](#english)
+
 Script AutoHotkey v2 cho Windows. Bạn nói bằng giọng nói ở ứng dụng AI (Claude, Antigravity, Gemini hoặc ChatGPT), script lấy chữ đã được chỉnh sửa rồi dán vào cửa sổ đang làm việc (Zalo, Telegram, Messenger, Word...).
 
 ## Phím tắt
@@ -47,3 +49,37 @@ Chỉ chạy một bản mỗi lúc, vì các bản dùng chung phím tắt bậ
 
 ## Giấy phép
 MIT License, xem tệp [LICENSE](LICENSE).
+
+
+---
+
+## English
+
+**VoiceToApp** is an AutoHotkey v2 script for Windows. You dictate in an AI app (Claude, Antigravity, Gemini or ChatGPT); the script takes the edited text and pastes it into the window you are working in (Zalo, Telegram, Messenger, Word...). The interface is in Vietnamese.
+
+### How it works
+
+- **Floating mic button:** click a text field in your own window and a small round mic button appears next to the caret. Click once: the mic starts in the AI app and focus returns to your window. Click again: the mic stops, the text is taken, the input box is cleared and the text is pasted into your window. The button blinks red while recording and does not steal focus from the text field.
+- **Hotkey** to toggle recording (default F8, works like the mic button). Change it or turn it off in Settings, Hotkeys tab.
+- **Tray icon:** left-click to pause (icon turns red, floating button hidden, the hotkey is released to other apps) and left-click again to resume. Right-click for the menu. If you pause while recording, the recording is finished normally first.
+
+### Settings window
+
+Right-click the tray icon and choose Settings. Three tabs:
+
+- **Button positions:** set the AI app's Mic button, input box and Stop button. Click "Set", the window hides, hover over the right button in the AI app and press Enter (Esc to cancel). Done once, reused afterwards.
+- **Hotkeys:** enable or disable and change the recording hotkey.
+- **Floating mic:** enable, size, blink speed, and a list of excluded apps (no mic button in those; default: Claude, ChatGPT, Antigravity, Gemini, since they have built-in voice input). Settings are stored in `%LOCALAPPDATA%\VoiceToApp\Settings.ini`, shared by all four versions.
+
+### Setup (once)
+
+1. Install [AutoHotkey v2](https://www.autohotkey.com/).
+2. Open the AI app and place its window where you want it.
+3. Right-click the script's tray icon, choose Settings, and on the button-positions tab set the Mic button, input box and Stop button (if any).
+4. Run the script for your AI app (`VoiceToApp_Claude_Rev5.9.ahk`, `VoiceToApp_Agy_Rev5.9.ahk`, `VoiceToApp_Gemini_Rev5.9.ahk` or `VoiceToApp_GPT_Rev5.9.ahk`).
+
+Button and window positions are saved in `%LOCALAPPDATA%\VoiceToApp\<App>.ini`. Run only one version at a time, because they share the recording hotkey.
+
+### License
+
+[MIT](LICENSE).
