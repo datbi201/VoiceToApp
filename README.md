@@ -46,4 +46,4 @@ Chỉ chạy một bản mỗi lúc, vì các bản dùng chung phím tắt bậ
 ```
 
 ## Giấy phép
-MIT License.
+MIT License, xem tệp [LICENSE](LICENSE).

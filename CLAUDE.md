@@ -50,7 +50,7 @@ Script AutoHotkey v2 cho Windows. Người dùng ở lại phần mềm A (Zalo,
 - Chỉ code dự án này đưa lên GitHub, kho riêng tư.
 
 ## Thực tế trong thư mục dự án của bạn
-- Dự án gốc: `D:\Google Drive\Other computers\NEC\My Projects\Voice to app`. Kho git nằm ở `01_REPO_GITHUB`, nhánh `master`, remote `origin`.
+- Kho git nằm ở `01_REPO_GITHUB`, nhánh `master`, remote `origin`.
 - `02_LOCAL_RUNTIME`: thư mục runtime cũ (ảnh mẫu, ini, log). Rev5.1 không dùng nữa, ini và log nằm ở `%LOCALAPPDATA%\VoiceToApp`.
 - Bốn launcher ở thư mục gốc: `run_voicetoapp.bat` (Antigravity), `run_voicetoapp_claude.bat`, `run_voicetoapp_gemini.bat`, `run_voicetoapp_gpt.bat`. Khi có Rev mới, phải sửa đường dẫn trong cả bốn. Các bản dùng chung phím bật/tắt ghi âm (mặc định F8), chỉ chạy một bản mỗi lúc.
 - Đừng để file shortcut `.lnk` trong repo (đã thêm `*.lnk` vào `.gitignore`). Shortcut khởi động cùng Windows phải trỏ tới Rev mới nhất.
